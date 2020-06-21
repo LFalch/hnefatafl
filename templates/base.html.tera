@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="no">
+    <head>
+        <meta charset="utf-8">
+        <title>{% block title %}{% endblock title %} - Hnefatafl</title>
+        {% block head %}{% endblock head %}
+    </head>
+    <body>
+        {% block content %}{% endblock content %}
+    </body>
+</html>

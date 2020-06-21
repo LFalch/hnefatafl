@@ -1,0 +1,14 @@
+{% extends "base" %}
+{% block title %}Index{% endblock title %}
+{% block content %}
+<h1>Index</h1>
+<p class="important">
+    Velkomen hit til denna sida til å spela Hnefatafl.
+</p>
+<p>
+    Heiter du {{name}}?
+</p>
+<p>
+    <a href="/spel">Gakk til spelet</a>
+</p>
+{% endblock content %}
