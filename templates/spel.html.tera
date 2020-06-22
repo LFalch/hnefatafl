@@ -1,10 +1,12 @@
 {% extends "base" %}
 {% block title %}Spel{% endblock title %}
 {% block head %}
-<h1>Spel</h1>
 <script src="static/pixi.min.js"></script>
-<p>Særleg takk til Andrew og Eiliv</p>
 {% endblock head %}
 {% block content %}
+<h1>Spel</h1>
+<p id="code"></p>
+<div id="game"></div>
+<p>Særleg takk til Andrew og Eiliv</p>
 <script src="static/main.js"></script>
 {% endblock content %}

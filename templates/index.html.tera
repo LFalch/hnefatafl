@@ -6,9 +6,14 @@
     Velkomen hit til denna sida til å spela Hnefatafl.
 </p>
 <p>
-    Heiter du {{name}}?
+    <a href="/spel">Lag eit nytt spel</a>
 </p>
 <p>
-    <a href="/spel">Gakk til spelet</a>
+    Eller bli med på spelet hjå ein ven
 </p>
+<form action="/spel" method="get">
+    <label for="code">Spel-kode:</label>
+    <input type="text" id="code" name="code"><br>
+    <input type="submit" value="Deltak">
+</form>
 {% endblock content %}

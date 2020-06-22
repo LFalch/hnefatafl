@@ -10,7 +10,7 @@ function randomInt(min, max) {
 let app = new PIXI.Application({ width: 600, height: 600 });
 
 //Add the canvas that Pixi automatically created for you to the HTML document
-document.body.appendChild(app.view);
+document.getElementById('game').appendChild(app.view);
 app.stage.interactive = true;
 
 PIXI.Loader.shared.add("static/konge.png").add("static/hirdmann.png").add("static/aatakar.png").add("static/brett.png").add("static/brett_stor.png").load(setup);
@@ -100,6 +100,25 @@ Board.prototype.pickup = function(_x, _y) {
 
     return this.find(x, y, false);
 }
+Board.prototype.delete = function(x, y) {
+    const [piece] = function() {
+        for (let i = 0; i < this.aatakarar.length; i++) {
+            if (this.aatakarar[i].at(x, y)) {
+                return this.aatakarar.splice(i, 1);
+            }
+        }
+        for (let i = 0; i < this.hirdmenn.length; i++) {
+            if (this.hirdmenn[i].at(x, y)) {
+                return this.hirdmenn.splice(i, 1);
+            }
+        }
+        return [];
+    }.bind(this)();
+    if (piece != undefined) {
+        app.stage.removeChild(piece.sprite);
+    }
+    return piece;
+}
 Board.prototype.find = function(x, y, ignoreTurn) {
     if (this.aatakTur || ignoreTurn) {
         for (let aatakar of this.aatakarar) {
@@ -122,9 +141,25 @@ Board.prototype.find = function(x, y, ignoreTurn) {
 }
 
 let board;
+let socket;
+
+let code;
 
 function setup() {
     board = new Board(false);
+    socket = new WebSocket(`ws://${document.location.hostname}:2794`, "hnefatafl");
+    socket.onmessage = onMessage;
+
+    socket.onopen = function() {
+        const get_code = new URLSearchParams(document.location.search).get('code');
+        
+        if (get_code == null) {
+            socket.send(`HOST`)
+        } else {
+            code = get_code;
+            socket.send(`JOIN ${code}`);
+        }
+    }
 
     app.renderer.plugins.interaction.on('pointerdown', onDown);
     app.renderer.plugins.interaction.on('pointermove', onMove);
@@ -148,6 +183,36 @@ function mkGmLoop(logic) {
 
 let pickedUp = null;
 
+function onMessage(event) {
+    console.info(event);
+
+    if (event.data.startsWith('HOST_OK ')) {
+        code = event.data.substr(8);
+
+        document.getElementById('code').innerHTML = `Gjev venen din denna koda so dei kann deltaka: ${code}`;
+    } else if (event.data.startsWith('JOIN_OK ')) {
+        if (code != event.data.substr(8)) {
+            console.error(`Our code ${code} didn't match the code code in the response ${event.data}`);
+        }
+    } else if (event.data.startsWith('DELETE ')) {
+        const args = event.data.substr(7).split(' ');
+
+        const x = Number(args[0]);
+        const y = Number(args[1]);
+
+        console.log(`deleted ${board.delete(x, y)}`);
+    } else if (event.data.startsWith('MOVE ')) {
+        const args = event.data.substr(5).split(' ');
+
+        const x = Number(args[0]);
+        const y = Number(args[1]);
+        const dx = Number(args[2]);
+        const dy = Number(args[3]);
+
+        board.find(x, y).move(dx, dy);
+        board.aatakTur = !board.aatakTur;
+    }
+}
 function onDown(event) {
     let piece = board.pickup(event.data.global.x, event.data.global.y);
 
@@ -176,8 +241,9 @@ function onUp(event) {
         const dx = pickedUp.x - pickedUp.orig.x;
         const dy = pickedUp.y - pickedUp.orig.y;
 
-        if (dx + dy == dx || dx + dy == dy) {
+        if (dx != dy && (dx + dy == dx || dx + dy == dy)) {
             board.find(pickedUp.orig.x, pickedUp.orig.y).move(dx, dy);
+            socket.send(`MOVE ${pickedUp.orig.x} ${pickedUp.orig.y} ${dx} ${dy}`);
             board.aatakTur = !board.aatakTur;
         }
 
