@@ -22,9 +22,25 @@ struct Player(WsReader, WsWriter);
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 struct Pos(i8, i8);
 
+impl Pos {
+    #[inline]
+    fn at(&self, x: i8, y: i8) -> bool {
+        self.0 == x && self.1 == y
+    }
+    fn surround(&self) -> impl Iterator<Item=(i8, i8)> {
+        Some((self.0+1, self.1)).into_iter().chain(
+            Some((self.0-1, self.1)).into_iter().chain(
+                Some((self.0, self.1+1)).into_iter().chain(
+                    Some((self.0, self.1-1))
+                )
+            )
+        )
+    }
+}
+
 pub struct Session {
-    aatak: Player,
-    hirdi: Option<Player>,
+    hirdi: Player,
+    aatak: Option<Player>,
     pub game: Game,
 }
 
@@ -32,35 +48,39 @@ impl Session {
     #[inline]
     fn new(aatak: (WsReader, WsWriter), game: Game) -> Self {
         Session {
-            aatak: Player(aatak.0, aatak.1),
-            hirdi: None,
+            hirdi: Player(aatak.0, aatak.1),
+            aatak: None,
             game,
         }
     }
     fn handle(&mut self) -> bool {
         let mut ret = false;
-        let Player(a_reader, a_sender) = &mut self.aatak;
-        if let Some(Player(h_reader, h_sender)) = &mut self.hirdi {
+        let Player(h_reader, h_sender) = &mut self.hirdi;
+        if let Some(Player(a_reader, a_sender)) = &mut self.aatak {
             match handle(h_reader, h_sender) {
-                Ok(c @ Command::Move(_, _, _, _)) => {
-                    let msg = c.into_message();
-                    h_sender.send_message(&msg).unwrap();
-                    a_sender.send_message(&msg).unwrap();
+                Ok(Command::Move(x, y, dx, dy)) => {
+                    for c in self.game.do_move(x, y, dx, dy, false) {
+                        let msg = c.into_message();
+                        h_sender.send_message(&msg).unwrap();
+                        a_sender.send_message(&msg).unwrap();
+                    }
                 }
                 Ok(_) => (),
                 Err(b) => ret = b,
             }
             match handle(a_reader, a_sender) {
-                Ok(c @ Command::Move(_, _, _, _)) => {
-                    let msg = c.into_message();
-                    a_sender.send_message(&msg).unwrap();
-                    h_sender.send_message(&msg).unwrap();
+                Ok(Command::Move(x, y, dx, dy)) => {
+                    for c in self.game.do_move(x, y, dx, dy, true) {
+                        let msg = c.into_message();
+                        a_sender.send_message(&msg).unwrap();
+                        h_sender.send_message(&msg).unwrap();
+                    }
                 }
                 Ok(_) => (),
                 Err(b) => ret = b || ret,
             }
         } else {
-            let msg = handle(a_reader, a_sender);
+            let msg = handle(h_reader, h_sender);
             match msg {
                 Ok(_) => (),
                 Err(b) => ret = b,
@@ -68,11 +88,11 @@ impl Session {
         }
         ret
     }
-    fn other_joined(&mut self, mut hirdi: (WsReader, WsWriter)) {
-        debug_assert!(self.hirdi.is_none());
-        self.aatak.1.send_message(&Command::Start.into_message()).unwrap();
-        hirdi.1.send_message(&Command::Start.into_message()).unwrap();
-        self.hirdi = Some(Player(hirdi.0, hirdi.1));
+    fn other_joined(&mut self, mut aatak: (WsReader, WsWriter)) {
+        debug_assert!(self.aatak.is_none());
+        self.hirdi.1.send_message(&Command::Start.into_message()).unwrap();
+        aatak.1.send_message(&Command::Start.into_message()).unwrap();
+        self.aatak = Some(Player(aatak.0, aatak.1));
     } 
 }
 
@@ -122,21 +142,141 @@ impl Game {
             aatakarar
         }
     }
+    fn find(&self, x: i8, y: i8) -> Option<PieceOnBoard> {
+        if self.konge.at(x, y) {
+            Some(PieceOnBoard::Konge)
+        } else {
+            for (i, aatakar) in self.aatakarar.iter().enumerate() {
+                if aatakar.at(x, y) {
+                    return Some(PieceOnBoard::Aatakar(i))
+                }
+            }
+            for (i, hirdmann) in self.hirdmenn.iter().enumerate() {
+                if hirdmann.at(x, y) {
+                    return Some(PieceOnBoard::Hirdmann(i))
+                }
+            }
+            None
+        }
+    }
+    #[allow(dead_code)]
+    fn get_pos(&self, piece: PieceOnBoard) -> Pos {
+        match piece {
+            PieceOnBoard::Konge => self.konge,
+            PieceOnBoard::Hirdmann(i) => self.hirdmenn[i],
+            PieceOnBoard::Aatakar(i) => self.aatakarar[i]
+        }
+    }
+    fn get_mut_pos(&mut self, piece: PieceOnBoard) -> &mut Pos {
+        match piece {
+            PieceOnBoard::Konge => &mut self.konge,
+            PieceOnBoard::Hirdmann(i) => &mut self.hirdmenn[i],
+            PieceOnBoard::Aatakar(i) => &mut self.aatakarar[i]
+        }
+    }
+    #[inline]
+    fn can_pass(&self, x: i8, y: i8) -> bool {
+        self.find(x, y).is_none()
+    }
+    fn can_go(&self, piece: PieceOnBoard, x: i8, y: i8) -> bool {
+        self.can_pass(x, y) &&
+        if let PieceOnBoard::Konge = piece {
+            true
+        } else {
+            !self.is_castle(x, y)
+        }
+    }
+    #[inline]
+    fn is_castle(&self, x: i8, y: i8) -> bool {
+        let mid = self.size / 2;
+        let last = self.size - 1;
+
+        ((x == 0 || x == last) && (y == 0 || y == last)) || (x == mid && y == mid)
+    }
+    fn do_move(&mut self, x: i8, y: i8, dx: i8, dy: i8, aatak: bool) -> Vec<Command> {
+        let mut cmds = Vec::with_capacity(4);
+
+        let dest_x = x + dx;
+        let dest_y = y + dy;
+
+        if dest_x < 0 || dest_x >= self.size || dest_y < 0 || dest_y >= self.size {
+            return cmds;
+        }
+
+        if let Some(piece) = self.find(x, y) {
+            if piece.is_aatak() == aatak && aatak == self.aatak_turn && self.can_go(piece, dest_x, dest_y) {
+                let can_pass = match (dx, dy) {
+                    (0, 1 ..= 127) => (y+1..=dest_y).map(|y| (dest_x, y)).all(|(x, y)| self.can_pass(x, y)),
+                    (0, -128 ..= -1) => (dest_y..y).map(|y| (dest_x, y)).all(|(x, y)| self.can_pass(x, y)),
+                    (1 ..= 127, 0) => (x+1..=dest_x).map(|x| (x, dest_y)).all(|(x, y)| self.can_pass(x, y)),
+                    (-128 ..= -1, 0) => (dest_x..x).map(|x| (x, dest_y)).all(|(x, y)| self.can_pass(x, y)),
+                    (0, 0) | (_, _) => return cmds,
+                };
+
+                if can_pass {
+                    cmds.push(Command::Move(x, y, dx, dy));
+                    let dest = Pos(dest_x, dest_y);
+                    *self.get_mut_pos(piece) = dest;
+
+                    for (x, y) in dest.surround() {
+                        if let Some(threatened_piece) = self.find(x, y) {
+                            if threatened_piece.is_aatak() != aatak {
+                                let (x2, y2) = (2 * x - dest.0, 2 * y - dest.1);
+                                let other_side = self.find(x2, y2).map(|p| p.is_aatak());
+                                
+                                if Some(aatak) == other_side || (!aatak && (self.is_castle(x2, y2))) {
+                                    let dead = match threatened_piece {
+                                        PieceOnBoard::Aatakar(i) => self.aatakarar.remove(i),
+                                        PieceOnBoard::Hirdmann(i) => self.hirdmenn.remove(i),
+                                        PieceOnBoard::Konge => continue,
+                                    };
+                                    debug_assert_eq!(dead, Pos(x, y));
+                                    cmds.push(Command::Delete(x, y));
+                                }
+                            }
+                        }
+                    }
+
+                    self.aatak_turn = !self.aatak_turn;
+                }
+            }
+        }
+
+        cmds
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum PieceOnBoard {
+    Hirdmann(usize),
+    Aatakar(usize),
+    Konge
+}
+
+impl PieceOnBoard {
+    #[inline]
+    fn is_aatak(&self) -> bool {
+        match self {
+            PieceOnBoard::Aatakar(_) => true,
+            _ => false,
+        }
+    }
 }
 
 impl Display for Game {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let size = self.size;
+        let size_u = size as usize;
 
         let c = |Pos(x, y)| {
-            let i = (x + y * (size + 1)) as usize;
+            let i = x as usize + y as usize * (size_u + 1);
             i..i+1
         };
 
         let mut board = {
-            let mut line = " ".repeat(size as usize);
+            let mut line = " ".repeat(size_u);
             line.push('\n');
-            line.repeat(size as usize)
+            line.repeat(size_u)
         };
 
         board.replace_range(c(self.konge), "K");
@@ -319,7 +459,7 @@ impl WebSocketServer {
                             Ok(Command::Join(the_code)) => {
                                 code = the_code;
                                 if let Some(session) = games.lock().unwrap().get_mut(&code) {
-                                if session.hirdi.is_none() {
+                                if session.aatak.is_none() {
                                     client.send_message(&Command::JoinOk(code, None).into_message()).unwrap();
                                     client.set_nonblocking(true).unwrap();
                                     session.other_joined(client.split().unwrap());

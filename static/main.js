@@ -179,18 +179,21 @@ function mkGmLoop(logic) {
 
 let pickedUp = null;
 let started = false;
+let aatak;
 
 function onMessage(event) {
     console.info(event);
 
     if (event.data.startsWith('HOST_OK ')) {
         code = event.data.substr(8);
+        aatak = false;
 
         document.getElementById('code').innerHTML = `Gjev venen din denna koda so dei kann deltaka: ${code}`;
     } else if (event.data.startsWith('JOIN_OK ')) {
         if (code != event.data.substr(8)) {
             console.error(`Our code ${code} didn't match the code code in the response ${event.data}`);
         }
+        aatak = true;
     } else if (event.data.startsWith('DELETE ')) {
         const args = event.data.substr(7).split(' ');
 
@@ -216,6 +219,10 @@ function onMessage(event) {
     }
 }
 function onDown(event) {
+    if (aatak != board.aatakTur) {
+        return
+    }
+
     let piece = board.pickup(event.data.global.x, event.data.global.y);
 
     if (piece != null) {
