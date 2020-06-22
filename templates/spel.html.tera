@@ -2,11 +2,25 @@
 {% block title %}Spel{% endblock title %}
 {% block head %}
 <script src="static/pixi.min.js"></script>
+<link rel="stylesheet" type="text/css" href="/static/spel.css">
 {% endblock head %}
 {% block content %}
 <h1>Spel</h1>
 <p id="code"></p>
-<div id="game"></div>
+<div id="container">
+    <div id="game"></div>
+        <div id="containerChat">
+            <div id="boxChat">
+                <div id="boxMessages"></div>
+                <div id="boxChatInput">
+                    <form id="formChat">
+                        <input id="inputChat" autocomplete="off" type="text" placeholder="Skriv ei melding til motstandaren din her..." minlength="1" maxlength="100">
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <p>Særleg takk til Andrew og Eiliv</p>
 <script src="static/main.js"></script>
 {% endblock content %}

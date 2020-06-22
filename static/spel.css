@@ -1,0 +1,62 @@
+#container {
+    display: flex;
+    justify-content: left;
+    width: 1000px;
+    max-height: 600px;
+}
+#containerChat {
+    position: relative;
+    margin-left: 8px;
+    width: 340px;
+    max-height: 600px;
+    min-width: 300px;
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+#boxChat {
+    box-sizing: border-box;
+    height: 100%;
+    max-height: 600px;
+    width: 100%;
+}
+#boxMessages {
+    background: #f6f6f6;
+    height: calc(100% - 34px);
+    overflow-y: scroll;
+}
+#boxMessages p {
+    background: #eee;
+    color: black;
+    padding: 3px;
+    margin: 0;
+    word-wrap: break-word;
+}
+#boxMessages p:nth-child(even) {
+    background: #fafafa;
+}
+#boxMessages p .info {
+    color: green;
+}
+#boxMessages p .error {
+    color: orangered;
+}
+#boxChatInput {
+    height: 34px;
+}
+#inputChat {
+    display: block;
+    width: 100%;
+    height: 30px;
+    font-size: 14px;
+    padding: 0px;
+    line-height: 1.4;
+    color: #555;
+    border-radius: 4px;
+    -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+    -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
+    -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+    transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+}

@@ -59,8 +59,15 @@ impl Session {
         if let Some(Player(a_reader, a_sender)) = &mut self.aatak {
             match handle(h_reader, h_sender) {
                 Ok(Command::Move(x, y, dx, dy)) => {
-                    for c in self.game.do_move(x, y, dx, dy, false) {
+                    for c in self.game.do_move(x, y, dx, dy, Team::Hirdi) {
                         let msg = c.into_message();
+                        h_sender.send_message(&msg).unwrap();
+                        a_sender.send_message(&msg).unwrap();
+                    }
+                }
+                Ok(Command::Chat(msg)) => {
+                    if !msg.is_empty() {
+                        let msg = Command::ChatMsg(Team::Hirdi, msg).into_message();
                         h_sender.send_message(&msg).unwrap();
                         a_sender.send_message(&msg).unwrap();
                     }
@@ -70,11 +77,16 @@ impl Session {
             }
             match handle(a_reader, a_sender) {
                 Ok(Command::Move(x, y, dx, dy)) => {
-                    for c in self.game.do_move(x, y, dx, dy, true) {
+                    for c in self.game.do_move(x, y, dx, dy, Team::Aatak) {
                         let msg = c.into_message();
                         a_sender.send_message(&msg).unwrap();
                         h_sender.send_message(&msg).unwrap();
                     }
+                }
+                Ok(Command::Chat(msg)) => {
+                    let msg = Command::ChatMsg(Team::Aatak, msg).into_message();
+                    a_sender.send_message(&msg).unwrap();
+                    h_sender.send_message(&msg).unwrap();
                 }
                 Ok(_) => (),
                 Err(b) => ret = b || ret,
@@ -99,7 +111,7 @@ impl Session {
 #[derive(Debug, Clone)]
 pub struct Game {
     size: i8,
-    aatak_turn: bool,
+    turn: Team,
     konge: Pos,
     hirdmenn: Vec<Pos>,
     aatakarar: Vec<Pos>,
@@ -136,7 +148,7 @@ impl Game {
 
         Game {
             size,
-            aatak_turn: true,
+            turn: Team::Aatak,
             konge,
             hirdmenn,
             aatakarar
@@ -189,11 +201,16 @@ impl Game {
     #[inline]
     fn is_castle(&self, x: i8, y: i8) -> bool {
         let mid = self.size / 2;
+
+        self.is_escape_castle(x, y) || (x == mid && y == mid)
+    }
+    #[inline]
+    fn is_escape_castle(&self, x: i8, y: i8) -> bool {
         let last = self.size - 1;
 
-        ((x == 0 || x == last) && (y == 0 || y == last)) || (x == mid && y == mid)
+        (x == 0 || x == last) && (y == 0 || y == last)
     }
-    fn do_move(&mut self, x: i8, y: i8, dx: i8, dy: i8, aatak: bool) -> Vec<Command> {
+    fn do_move(&mut self, x: i8, y: i8, dx: i8, dy: i8, team: Team) -> Vec<Command> {
         let mut cmds = Vec::with_capacity(4);
 
         let dest_x = x + dx;
@@ -204,7 +221,7 @@ impl Game {
         }
 
         if let Some(piece) = self.find(x, y) {
-            if piece.is_aatak() == aatak && aatak == self.aatak_turn && self.can_go(piece, dest_x, dest_y) {
+            if piece.team() == team && team == self.turn && self.can_go(piece, dest_x, dest_y) {
                 let can_pass = match (dx, dy) {
                     (0, 1 ..= 127) => (y+1..=dest_y).map(|y| (dest_x, y)).all(|(x, y)| self.can_pass(x, y)),
                     (0, -128 ..= -1) => (dest_y..y).map(|y| (dest_x, y)).all(|(x, y)| self.can_pass(x, y)),
@@ -220,11 +237,11 @@ impl Game {
 
                     for (x, y) in dest.surround() {
                         if let Some(threatened_piece) = self.find(x, y) {
-                            if threatened_piece.is_aatak() != aatak {
+                            if threatened_piece.team() != team {
                                 let (x2, y2) = (2 * x - dest.0, 2 * y - dest.1);
-                                let other_side = self.find(x2, y2).map(|p| p.is_aatak());
+                                let other_side = self.find(x2, y2).map(|p| p.team());
                                 
-                                if Some(aatak) == other_side || (!aatak && (self.is_castle(x2, y2))) {
+                                if Some(team) == other_side || (team == Team::Hirdi && (self.is_castle(x2, y2))) {
                                     let dead = match threatened_piece {
                                         PieceOnBoard::Aatakar(i) => self.aatakarar.remove(i),
                                         PieceOnBoard::Hirdmann(i) => self.hirdmenn.remove(i),
@@ -237,12 +254,35 @@ impl Game {
                         }
                     }
 
-                    self.aatak_turn = !self.aatak_turn;
+                    self.turn.switch();
                 }
             }
         }
 
         cmds
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Team {
+    Aatak,
+    Hirdi,
+}
+
+impl std::ops::Not for Team {
+    type Output = Self;
+    #[inline]
+    fn not(self) -> Self::Output {
+        match self {
+            Team::Aatak => Team::Hirdi,
+            Team::Hirdi => Team::Aatak,
+        }
+    }
+}
+
+impl Team {
+    fn switch(&mut self) {
+        *self = !*self;
     }
 }
 
@@ -255,10 +295,10 @@ enum PieceOnBoard {
 
 impl PieceOnBoard {
     #[inline]
-    fn is_aatak(&self) -> bool {
+    fn team(&self) -> Team {
         match self {
-            PieceOnBoard::Aatakar(_) => true,
-            _ => false,
+            PieceOnBoard::Aatakar(_) => Team::Aatak,
+            _ => Team::Hirdi,
         }
     }
 }
@@ -307,7 +347,9 @@ enum Command {
     JoinOk(String, Option<String>),
     Start,
     Move(i8, i8, i8, i8),
-    Delete(i8, i8)
+    Delete(i8, i8),
+    ChatMsg(Team, String),
+    Chat(String),
 }
 
 impl Command {
@@ -336,6 +378,17 @@ impl FromStr for Command {
                 split.next().ok_or(())?.parse().map_err(|_| ())?,
                 split.next().ok_or(())?.parse().map_err(|_| ())?,
             )),
+            "CHAT_MSG" => Ok(Command::ChatMsg(
+                match split.next().ok_or(())? {
+                    "0" | "hirdi" | "false" => Team::Hirdi,
+                    "1" | "åtak" | "aatak" | "true" => Team::Aatak,
+                    _ => return Err(()),
+                },
+                split.collect::<Vec<&str>>().join(" ")
+            )),
+            "CHAT" => Ok(Command::Chat(
+                split.collect::<Vec<&str>>().join(" ")
+            )),
             _ => Err(())
         }
     }
@@ -353,6 +406,9 @@ impl Display for Command {
             Command::Start => write!(f, "START"),
             Command::Move(a, b, c, d) => write!(f, "MOVE {} {} {} {}", a, b, c, d),
             Command::Delete(a, b) => write!(f, "DELETE {} {}", a, b),
+            Command::ChatMsg(Team::Hirdi, m) => write!(f, "CHAT_MSG 0 {}", m),
+            Command::ChatMsg(Team::Aatak, m) => write!(f, "CHAT_MSG 1 {}", m),
+            Command::Chat(m) => write!(f, "CHAT {}", m),
         }
     }
 }

@@ -1,12 +1,3 @@
-function randomInt(min, max) {
-    if (!max) {
-        max = min;
-        min = 0;
-    }
-
-    return Math.floor(Math.random() * (max - min) + min);
-}
-
 let app = new PIXI.Application({ width: 600, height: 600 });
 
 //Add the canvas that Pixi automatically created for you to the HTML document
@@ -19,7 +10,6 @@ let texes = {};
 
 function texture(name) {
     if (!texes[name]) {
-        console.log(`loading ${name}`);
         texes[name] = PIXI.Loader.shared.resources[`static/${name}.png`].texture;
     }
 
@@ -55,8 +45,63 @@ function fromReal(x, y) {
     return {x: Math.floor((x - 11)/40), y: Math.floor((y - 11)/40)}
 }
 
+/**
+ * @param {string} [sender] - Sender name.
+ * @param {string} msg - Message body.
+ * @param {string} [msg_class] - CSS class for message body
+ */
+function msgBox(sender, msg, msg_class) {
+    if (!msg) {
+        msg = sender;
+        sender = null;
+    }
+
+    const sender_txt = sender ? document.createTextNode(`${sender}: `) : null;
+    const msg_txt = document.createTextNode(msg);
+    
+    let p = document.createElement("p");
+
+    if (sender_txt) {
+        let b = document.createElement("b");
+        b.appendChild(sender_txt);
+
+        p.appendChild(b);
+    }
+
+    let span = document.createElement("span");
+    span.appendChild(msg_txt);
+    if (msg_class) {
+        span.classList.add(msg_class);
+    }
+
+    p.appendChild(span);
+
+    const bm = document.getElementById('boxMessages');
+
+    const scroll = bm.scrollHeight - bm.scrollTop == bm.clientHeight;
+
+    bm.appendChild(p);
+    if (scroll) {
+        bm.scrollBy(0, p.clientHeight);
+    }
+
+    return p;
+}
+
 function Board(stor) {
     const brett = new PIXI.Sprite(texture(stor ? 'brett_stor' : 'brett'));
+
+    let game_div = document.getElementById('game');
+    let game_canvas = game_div.children[0];
+    game_canvas.width = brett.width;
+    game_canvas.height = brett.height;
+    game_div.style.width = brett.width + 10;
+    game_div.style.height = brett.height + 5;
+    document.getElementById('boxChat').style.height = brett.height + 5 + 'px';
+    document.getElementById('boxChat').style.maxHeight = brett.height + 5 + 'px';
+    document.getElementById('containerChat').style.height = brett.height + 5 + 'px';
+    document.getElementById('containerChat').style.maxHeight = brett.height + 5 + 'px';
+
     app.stage.addChild(brett);
     const aatakar = texture('aatakar');
     const hirdmann = texture('hirdmann');
@@ -149,6 +194,17 @@ function setup() {
     board = new Board(false);
     socket = new WebSocket(`ws://${document.location.hostname}:2794`, "hnefatafl");
     socket.onmessage = onMessage;
+    socket.onclose = onClose;
+
+    document.getElementById('formChat').onsubmit = function(event) {
+        target = event.target;
+        const msg = event.target.firstElementChild.value;
+        event.target.firstElementChild.value = '';
+
+        socket.send(`CHAT ${msg}`);
+
+        event.preventDefault();
+    }
 
     socket.onopen = function() {
         const get_code = new URLSearchParams(document.location.search).get('code');
@@ -181,19 +237,37 @@ let pickedUp = null;
 let started = false;
 let aatak;
 
-function onMessage(event) {
-    console.info(event);
+function onClose(event) {
+    msgBox(null, `Noko gjekk gale: ${event.reason}`, 'error');
+}
 
+const senderName = function() {
+    let senderName = {
+        '0': 'Hirdi',
+        '1': 'Åtak'
+    };
+    senderName['hirdi'] = senderName['false'] = senderName['0'];
+    senderName['åtak'] = senderName['aatak'] = senderName['true'] = senderName['1'];
+    return senderName;
+}();
+
+function onMessage(event) {
     if (event.data.startsWith('HOST_OK ')) {
         code = event.data.substr(8);
         aatak = false;
 
-        document.getElementById('code').innerHTML = `Gjev venen din denna koda so dei kann deltaka: ${code}`;
+        document.getElementById('code').innerHTML = `Gjev venen din denna koda so dei kann verta med: ${code}`;
+
+        msgBox(null, "Kopla til.", "info");
     } else if (event.data.startsWith('JOIN_OK ')) {
         if (code != event.data.substr(8)) {
-            console.error(`Our code ${code} didn't match the code code in the response ${event.data}`);
+            console.error(`Our code ${code} didn't match the code in the response ${event.data}`);
+            msgBox(null, `Tenar gav feil svar. Eg venta sessionskoda ${code}, men fekk ${event.data}!`, 'error');
+            socket.close();
+        } else {
+            aatak = true;
+            msgBox(null, "Kopla til runde.", "info");
         }
-        aatak = true;
     } else if (event.data.startsWith('DELETE ')) {
         const args = event.data.substr(7).split(' ');
 
@@ -211,11 +285,32 @@ function onMessage(event) {
 
         board.find(x, y).move(dx, dy);
         board.aatakTur = !board.aatakTur;
+
+        let msg = "";
+        if (board.aatakTur == aatak) {
+            msg = "Det er turen din att.";
+        } else {
+            msg = "Det er turen til motstandaren.";
+        }
+        msgBox(null, msg, "info");
     } else if (!started && event.data.startsWith('START')) {
         started = true;
         app.renderer.plugins.interaction.on('pointerdown', onDown);
         app.renderer.plugins.interaction.on('pointermove', onMove);
         app.renderer.plugins.interaction.on('pointerup', onUp);
+
+        msgBox(null, "Spelet er no i gang" + (
+            board.aatakTur == aatak ?
+            ' og du kann byrja.' :
+            ', men det er ikkje du som byrjar.'
+        ), "info");
+    } else if (event.data.startsWith('CHAT_MSG ')) {
+        const body = event.data.substr('CHAT_MSG '.length);
+        const sender = body.split(' ')[0];
+        const sender_name = senderName[sender] || 'Ukjend';
+        const msg = body.substr(sender.length+1);
+
+        msgBox(sender_name, msg);
     }
 }
 function onDown(event) {

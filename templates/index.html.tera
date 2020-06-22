@@ -9,11 +9,11 @@
     <a href="/spel">Lag eit nytt spel</a>
 </p>
 <p>
-    Eller bli med på spelet hjå ein ven
+    Eller vert med på spelet hjå ein ven
 </p>
 <form action="/spel" method="get">
     <label for="code">Spel-kode:</label>
-    <input type="text" id="code" name="code"><br>
-    <input type="submit" value="Deltak">
+    <input type="text" id="code" autocomplete="off" name="code" maxlength="5"><br>
+    <input type="submit" value="Vert med">
 </form>
 {% endblock content %}
