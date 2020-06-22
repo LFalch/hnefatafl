@@ -7,6 +7,7 @@ use websocket::sender::Writer;
 use std::thread;
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
+use std::str::FromStr;
 use std::fmt::{self, Display};
 use std::net::TcpStream;
 use std::io::ErrorKind as IoErrorKind;
@@ -16,7 +17,7 @@ use rand::{seq::SliceRandom, thread_rng};
 type WsReader = Reader<TcpStream>;
 type WsWriter = Writer<TcpStream>;
 
-struct Player((WsReader, WsWriter));
+struct Player(WsReader, WsWriter);
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 struct Pos(i8, i8);
@@ -27,9 +28,58 @@ pub struct Session {
     pub game: Game,
 }
 
+impl Session {
+    #[inline]
+    fn new(aatak: (WsReader, WsWriter), game: Game) -> Self {
+        Session {
+            aatak: Player(aatak.0, aatak.1),
+            hirdi: None,
+            game,
+        }
+    }
+    fn handle(&mut self) -> bool {
+        let mut ret = false;
+        let Player(a_reader, a_sender) = &mut self.aatak;
+        if let Some(Player(h_reader, h_sender)) = &mut self.hirdi {
+            match handle(h_reader, h_sender) {
+                Ok(c @ Command::Move(_, _, _, _)) => {
+                    let msg = c.into_message();
+                    h_sender.send_message(&msg).unwrap();
+                    a_sender.send_message(&msg).unwrap();
+                }
+                Ok(_) => (),
+                Err(b) => ret = b,
+            }
+            match handle(a_reader, a_sender) {
+                Ok(c @ Command::Move(_, _, _, _)) => {
+                    let msg = c.into_message();
+                    a_sender.send_message(&msg).unwrap();
+                    h_sender.send_message(&msg).unwrap();
+                }
+                Ok(_) => (),
+                Err(b) => ret = b || ret,
+            }
+        } else {
+            let msg = handle(a_reader, a_sender);
+            match msg {
+                Ok(_) => (),
+                Err(b) => ret = b,
+            }
+        }
+        ret
+    }
+    fn other_joined(&mut self, mut hirdi: (WsReader, WsWriter)) {
+        debug_assert!(self.hirdi.is_none());
+        self.aatak.1.send_message(&Command::Start.into_message()).unwrap();
+        hirdi.1.send_message(&Command::Start.into_message()).unwrap();
+        self.hirdi = Some(Player(hirdi.0, hirdi.1));
+    } 
+}
+
 #[derive(Debug, Clone)]
 pub struct Game {
     size: i8,
+    aatak_turn: bool,
     konge: Pos,
     hirdmenn: Vec<Pos>,
     aatakarar: Vec<Pos>,
@@ -66,6 +116,7 @@ impl Game {
 
         Game {
             size,
+            aatak_turn: true,
             konge,
             hirdmenn,
             aatakarar
@@ -108,7 +159,65 @@ fn gen_game_code() -> String {
     CHARS.choose_multiple(&mut thread_rng(), 5).copied().collect()
 }
 
-fn handle(reader: &mut WsReader, sender: &mut WsWriter) -> Result<String, bool> {
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum Command {
+    Host(Option<String>),
+    Join(String),
+    HostOk(String),
+    JoinOk(String, Option<String>),
+    Start,
+    Move(i8, i8, i8, i8),
+    Delete(i8, i8)
+}
+
+impl Command {
+    fn into_message(self) -> OwnedMessage {
+        OwnedMessage::Text(self.to_string())
+    } 
+}
+
+impl FromStr for Command {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut split = s.split(' ');
+        match split.next().ok_or(())? {
+            "HOST" => Ok(Command::Host(split.next().map(|s| s.to_owned()))),
+            "JOIN" => Ok(Command::Join((split.next().ok_or(())?).to_owned())),
+            "HOST_OK" => Ok(Command::HostOk((split.next().ok_or(())?).to_owned())),
+            "JOIN_OK" => Ok(Command::JoinOk((split.next().ok_or(())?).to_owned(), split.next().map(|s| s.to_owned()))),
+            "START" => Ok(Command::Start),
+            "MOVE" => Ok(Command::Move(
+                split.next().ok_or(())?.parse().map_err(|_| ())?,
+                split.next().ok_or(())?.parse().map_err(|_| ())?,
+                split.next().ok_or(())?.parse().map_err(|_| ())?,
+                split.next().ok_or(())?.parse().map_err(|_| ())?,
+            )),
+            "DELETE" => Ok(Command::Delete(
+                split.next().ok_or(())?.parse().map_err(|_| ())?,
+                split.next().ok_or(())?.parse().map_err(|_| ())?,
+            )),
+            _ => Err(())
+        }
+    }
+}
+
+impl Display for Command {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Command::Host(Some(s)) => write!(f, "HOST {}", s),
+            Command::Host(None) => write!(f, "HOST"),
+            Command::Join(s) => write!(f, "JOIN {}", s),
+            Command::HostOk(s) => write!(f, "HOST_OK {}", s),
+            Command::JoinOk(s, Some(s2)) => write!(f, "JOIN_OK {} {}", s, s2),
+            Command::JoinOk(s, None) => write!(f, "JOIN_OK {}", s),
+            Command::Start => write!(f, "START"),
+            Command::Move(a, b, c, d) => write!(f, "MOVE {} {} {} {}", a, b, c, d),
+            Command::Delete(a, b) => write!(f, "DELETE {} {}", a, b),
+        }
+    }
+}
+
+fn handle(reader: &mut WsReader, sender: &mut WsWriter) -> Result<Command, bool> {
     let message = match reader.recv_message() {
         Ok(o) => o,
         // Err(WebSocketError::NoDataAvailable) => return Err(false),
@@ -125,12 +234,16 @@ fn handle(reader: &mut WsReader, sender: &mut WsWriter) -> Result<String, bool> 
             sender.send_message(&message).unwrap();
             return Err(true);
         }
+        OwnedMessage::Pong(_) => (),
         OwnedMessage::Ping(ping) => {
             let message = OwnedMessage::Pong(ping);
             sender.send_message(&message).unwrap();
         }
         OwnedMessage::Text(text) => {
-            return Ok(text);
+            return text.parse().map_err(|()| {
+                eprintln!("Couldn't parse {:?}", text);
+                false
+            });
         }
         _ => eprintln!("Got unexpected {:?}", message),
     }
@@ -164,35 +277,8 @@ impl WebSocketServer {
                         let mut deads = Vec::new();
 
                         for (code, session) in games_lock.iter_mut() {
-                            let Player((a_reader, a_sender)) = &mut session.aatak;
-                            if let Some(Player((h_reader, h_sender))) = &mut session.hirdi {
-                                match handle(h_reader, h_sender) {
-                                    Ok(msg) => {
-                                        eprintln!("{}: h sent {:?}", code, msg);
-                                        if msg.starts_with("MOVE ") {
-                                            a_sender.send_message(&OwnedMessage::Text(msg)).unwrap();
-                                        }
-                                    }
-                                    Err(true) => deads.push(code.clone()),
-                                    Err(false) => (),
-                                }
-                                match handle(a_reader, a_sender) {
-                                    Ok(msg) => {
-                                        eprintln!("{}: h sent {:?}", code, msg);
-                                        if msg.starts_with("MOVE ") {
-                                            h_sender.send_message(&OwnedMessage::Text(msg)).unwrap();
-                                        }
-                                    }
-                                    Err(true) => deads.push(code.clone()),
-                                    Err(false) => (),
-                                }
-                            } else {
-                                let msg = handle(a_reader, a_sender);
-                                match msg {
-                                    Ok(msg) => eprintln!("{}: got {:?}", code, msg),
-                                    Err(true) => deads.push(code.clone()),
-                                    Err(false) => (),
-                                }
+                            if session.handle() {
+                                deads.push(code.clone());
                             }
                         }
 
@@ -229,13 +315,14 @@ impl WebSocketServer {
 
                 match msg {
                     OwnedMessage::Text(s) => {
-                        if s.starts_with("JOIN ") {
-                            code = s[5..].to_owned();
-                            if let Some(session) = games.lock().unwrap().get_mut(&code) {
+                        match s.parse() {
+                            Ok(Command::Join(the_code)) => {
+                                code = the_code;
+                                if let Some(session) = games.lock().unwrap().get_mut(&code) {
                                 if session.hirdi.is_none() {
-                                    client.send_message(&OwnedMessage::Text(format!("JOIN_OK {}", code))).unwrap();
+                                    client.send_message(&Command::JoinOk(code, None).into_message()).unwrap();
                                     client.set_nonblocking(true).unwrap();
-                                    session.hirdi = Some(Player(client.split().unwrap()));
+                                    session.other_joined(client.split().unwrap());
                                 } else {
                                     client.send_message(&OwnedMessage::Close(Some(CloseData{
                                         status_code: 1008,
@@ -248,25 +335,23 @@ impl WebSocketServer {
                                     reason: "No such game".to_owned(),
                                 }))).unwrap();
                             }
-                        } else if s.starts_with("HOST") {
-                            let stor = &s[4..] == " stor";
+                            }
+                            Ok(Command::Host(s)) => {
+                                let stor = s.as_ref().map(|s| &**s) == Some("stor");
                             
-                            code = loop {
-                                let code = gen_game_code();
-                                
-                                if !games.lock().unwrap().contains_key(&code) {
-                                    break code;
-                                }
-                            };
-                            client.send_message(&OwnedMessage::Text(format!("HOST_OK {}", code))).unwrap();
-                            client.set_nonblocking(true).unwrap();
-                            games.lock().unwrap().insert(code.clone(), Session {
-                                aatak: Player(client.split().unwrap()),
-                                hirdi: None,
-                                game: Game::new(stor)
-                            });
-                        } else {
-                            panic!("didn't except: {:?}", s)
+                                code = loop {
+                                    let code = gen_game_code();
+                                    
+                                    if !games.lock().unwrap().contains_key(&code) {
+                                        break code;
+                                    }
+                                };
+                                client.send_message(&Command::HostOk(code.clone()).into_message()).unwrap();
+                                client.set_nonblocking(true).unwrap();
+                                games.lock().unwrap().insert(code.clone(), Session::new(client.split().unwrap(), Game::new(stor)));
+                            }
+                            Ok(c) => panic!("didn't except: {:?}", c),
+                            Err(_) => panic!("Couldn't parse {:?}", s),
                         }
                     }
                     s => panic!("didn't expect {:?}", s)

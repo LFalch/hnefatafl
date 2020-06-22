@@ -161,10 +161,6 @@ function setup() {
         }
     }
 
-    app.renderer.plugins.interaction.on('pointerdown', onDown);
-    app.renderer.plugins.interaction.on('pointermove', onMove);
-    app.renderer.plugins.interaction.on('pointerup', onUp);
-
     app.ticker.add(mkGmLoop(consistentLogic));
 }
 
@@ -182,6 +178,7 @@ function mkGmLoop(logic) {
 }
 
 let pickedUp = null;
+let started = false;
 
 function onMessage(event) {
     console.info(event);
@@ -211,6 +208,11 @@ function onMessage(event) {
 
         board.find(x, y).move(dx, dy);
         board.aatakTur = !board.aatakTur;
+    } else if (!started && event.data.startsWith('START')) {
+        started = true;
+        app.renderer.plugins.interaction.on('pointerdown', onDown);
+        app.renderer.plugins.interaction.on('pointermove', onMove);
+        app.renderer.plugins.interaction.on('pointerup', onUp);
     }
 }
 function onDown(event) {
@@ -242,9 +244,7 @@ function onUp(event) {
         const dy = pickedUp.y - pickedUp.orig.y;
 
         if (dx != dy && (dx + dy == dx || dx + dy == dy)) {
-            board.find(pickedUp.orig.x, pickedUp.orig.y).move(dx, dy);
             socket.send(`MOVE ${pickedUp.orig.x} ${pickedUp.orig.y} ${dx} ${dy}`);
-            board.aatakTur = !board.aatakTur;
         }
 
         pickedUp = null;
