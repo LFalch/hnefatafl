@@ -1,7 +1,16 @@
 {% extends "base" %}
-{% block title %}Index{% endblock title %}
+{% block title %}Nevetavl{% endblock title %}
+
+{% block head %}
+<style>
+body {
+    padding-left: 8px;
+    max-width: 800px;
+}
+</style>
+{% endblock head %}
 {% block content %}
-<h1>Index</h1>
+<h1>Nevetavl</h1>
 <p class="important">
     Velkomen hit til denna sida til å spela Hnefatafl.
 </p>
@@ -16,4 +25,29 @@
     <input type="text" id="code" autocomplete="off" name="code" maxlength="5"><br>
     <input type="submit" value="Vert med">
 </form>
+<h2>Reglar</h2>
+<p>Spelet gjeng ut på å taka kongen til fange. Hirdi åt kongen kjempar mot åtakarane som er i yvertal og kongen må fly. Åtakarane hev vunne um kongen er åleina med berre åtakarar kring seg. Kongen og hirdi hava vunne um kongen greider å fly til ei av dei 4 borgene sine (éi i kvart hyrna av tavlet).</p>
+
+<h3>Setjing av brikkone.</h3>
+<p>Dei 13 kvite brikkone (kongen og dei 12 hirdmennene hans) verta sette ut i dei merkte felti midt på tavlet med kongen i midten (kongsborgi). Dei 24 svarte brikkone (åtakarane) verta sette ut i dei merkte felti på kvar av dei fjore sidone.</p>
+
+<h3>Flytjing av brikkone (stikk).</h3>
+<p>Åtakarane taka alltid fyrste stikk. Spelet held so fram skiftande millom dei tvo partane. Alle åtakarane og hirdmennene verta flutte på same måte: Ei brikka kann verta flutt til alle sidor eit eller fleire felt til ein lìdug stad (på same måte som tårnet i skåk), men ikkje skeivt. Det er ikkje lov å hoppa yver andre brikkor. Berre kongen kann standa på feltet i midten (kongsborgi), men andre kunna fritt hoppa yver um ein vil. Det er helder ingen annan en kongen som kann ganga i hyrnefelti (dei fjore borgene kongen kann fly åt).</p>
+
+<h3>Slag av brikkor</h3>
+<p>Ein hermann (åtakar eller hirdmann) vert slegen nær han hev ein motstandar på éi sida og fær ein annan på hi (sjå teikningi). Brikka vert då teki burt frå tavlet. Derimot vert ikkje hermannen slegen um han sjølv flyt inn i eit liknande felt millom tvo motstandarar. Ein hermann vert òg slegen um han hev ei av hyrneborgene på  éi sida  og ein motstandar på hi (sjå teikningi). Kongen kann sjølv vera med på å slå åtakarane på same måte som hirdi si, men kann ikkje sjølv verta slegen.</p>
+
+
+<h4>Hermann vert drepen:</h4>
+<p>Hirdmannen vert drepen nær ein av åtakarane vert flutt som pilene visa.</p>
+
+<h4>Hermann vert drepen:</h4>
+<p>Åtakaren vert drepen nær han stend med «ryggen mot» kongsborgi og hirdmannen vert flutt til feltet på hi sida.</p>
+
+<h3>Kven vinn</h3>
+<p>Kongen vinn um han greider å fly til ei av borgene sine (hyrnefelti). Han hev tapa um han vert stengd inne millom fjore åtakarar og ikkje kann flytja seg (sjå teikningi). Han hev òg tapa um han er stengd inn med «ryggen mot borgi si eigi» i midte av tavle og med åtakarar på trjå sidor.</p>
+
+<h4>Kongen vert teken:</h4>
+<p>Kongen er teken nær han hev åtakarar på alle sidor og ikkje kann sleppa fri.</p>
+
 {% endblock content %}
