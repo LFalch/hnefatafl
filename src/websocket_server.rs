@@ -91,6 +91,31 @@ impl Session {
                 Ok(_) => (),
                 Err(b) => ret = b || ret,
             }
+
+            // Check is someone has won now
+            if let Some(winner) = self.game.who_has_won() {
+                match winner {
+                    Team::Aatak => {
+                        a_sender.send_message(&Command::Win.into_message()).unwrap();
+                        h_sender.send_message(&Command::Lose.into_message()).unwrap();
+                    }
+                    Team::Hirdi => {
+                        h_sender.send_message(&Command::Win.into_message()).unwrap();
+                        a_sender.send_message(&Command::Lose.into_message()).unwrap();
+                    }
+                }
+
+                let game_over_messsage = OwnedMessage::Close(Some(CloseData{
+                    status_code: 1000,
+                    reason: "Game over".to_owned(),
+                }));
+
+                h_sender.send_message(&game_over_messsage).unwrap();
+                a_sender.send_message(&game_over_messsage).unwrap();
+
+                ret = true;
+            }
+
         } else {
             let msg = handle(h_reader, h_sender);
             match msg {
@@ -200,9 +225,13 @@ impl Game {
     }
     #[inline]
     fn is_castle(&self, x: i8, y: i8) -> bool {
+        self.is_escape_castle(x, y) || self.is_middle_castle(x, y)
+    }
+    #[inline]
+    fn is_middle_castle(&self, x: i8, y: i8) -> bool {
         let mid = self.size / 2;
 
-        self.is_escape_castle(x, y) || (x == mid && y == mid)
+        x == mid && y == mid
     }
     #[inline]
     fn is_escape_castle(&self, x: i8, y: i8) -> bool {
@@ -210,13 +239,17 @@ impl Game {
 
         (x == 0 || x == last) && (y == 0 || y == last)
     }
+    #[inline]
+    fn out_of_bounds(&self, x: i8, y: i8) -> bool {
+        x < 0 || x >= self.size || y < 0 || y >= self.size
+    }
     fn do_move(&mut self, x: i8, y: i8, dx: i8, dy: i8, team: Team) -> Vec<Command> {
         let mut cmds = Vec::with_capacity(4);
 
         let dest_x = x + dx;
         let dest_y = y + dy;
 
-        if dest_x < 0 || dest_x >= self.size || dest_y < 0 || dest_y >= self.size {
+        if self.out_of_bounds(dest_x, dest_y) {
             return cmds;
         }
 
@@ -260,6 +293,24 @@ impl Game {
         }
 
         cmds
+    }
+    fn who_has_won(&self) -> Option<Team> {
+        let Pos(kx, ky) = self.konge;
+
+        if self.is_escape_castle(kx, ky) {
+            Some(Team::Hirdi)
+        } else {
+            let king_captured = Pos(kx, ky).surround().all(|(x, y)| {
+                self.out_of_bounds(x, y) ||
+                self.is_middle_castle(x, y) ||
+                self.find(x, y).map(|p| p.team()) == Some(Team::Aatak)
+            });
+            if king_captured {
+                Some(Team::Aatak)
+            } else {
+                None
+            }
+        }
     }
 }
 
@@ -350,6 +401,8 @@ enum Command {
     Delete(i8, i8),
     ChatMsg(Team, String),
     Chat(String),
+    Win,
+    Lose,
 }
 
 impl Command {
@@ -389,6 +442,8 @@ impl FromStr for Command {
             "CHAT" => Ok(Command::Chat(
                 split.collect::<Vec<&str>>().join(" ")
             )),
+            "WIN" => Ok(Command::Win),
+            "LOSE" => Ok(Command::Lose),
             _ => Err(())
         }
     }
@@ -409,6 +464,8 @@ impl Display for Command {
             Command::ChatMsg(Team::Hirdi, m) => write!(f, "CHAT_MSG 0 {}", m),
             Command::ChatMsg(Team::Aatak, m) => write!(f, "CHAT_MSG 1 {}", m),
             Command::Chat(m) => write!(f, "CHAT {}", m),
+            Command::Win => write!(f, "WIN"),
+            Command::Lose => write!(f, "LOSE"),
         }
     }
 }

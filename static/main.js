@@ -238,7 +238,7 @@ let started = false;
 let aatak;
 
 function onClose(event) {
-    msgBox(null, `Noko gjekk gale: ${event.reason}`, 'error');
+    msgBox(null, `Noko gjekk kanskje gale. Koppla av: ${event.reason}`, 'error');
 }
 
 const senderName = function() {
@@ -250,6 +250,10 @@ const senderName = function() {
     senderName['åtak'] = senderName['aatak'] = senderName['true'] = senderName['1'];
     return senderName;
 }();
+const end = {
+    true: 'Kongen vart slegen',
+    false: 'Kongen slapp undan',
+};
 
 function onMessage(event) {
     if (event.data.startsWith('HOST_OK ')) {
@@ -311,6 +315,10 @@ function onMessage(event) {
         const msg = body.substr(sender.length+1);
 
         msgBox(sender_name, msg);
+    } else if (event.data.startsWith('WIN')) {
+        msgBox(null, `${end[aatak]}. Til lukke; du hev vunne!`);
+    } else if (event.data.startsWith('LOSE')) {
+        msgBox(null, `${end[!aatak]}. Betre hell neste gong; du tapte :(`);
     }
 }
 function onDown(event) {
