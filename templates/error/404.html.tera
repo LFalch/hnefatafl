@@ -1,8 +1,8 @@
 {% extends "base" %}
 {% block title %}404{% endblock title %}
 {% block content %}
-<h1>Ikkje funne - 404</h1>
+<h1>{{lang.not_found_title}} - 404</h1>
 <p class="error">
-    Sida {{path}} vart ikkje funne.
+    {{lang.the_page}}{{path}}{{lang.was_not_found}}
 </p>
 {% endblock content %}

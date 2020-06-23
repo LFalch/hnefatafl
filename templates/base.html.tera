@@ -1,11 +1,22 @@
 <!DOCTYPE html>
-<html lang="no">
+<html lang="{{lang.lang_code}}">
     <head>
         <meta charset="utf-8">
         <title>{% block title %}{% endblock title %} - Hnefatafl</title>
         {% block head %}{% endblock head %}
+        <script>
+        function langChoose() {
+            document.cookie = `lang=${document.getElementById('langChoice').value}`;
+            document.location.reload();
+        }
+        </script>
     </head>
     <body>
+        <select id="langChoice" onchange="langChoose()">
+            {% for l in langs %}
+            <option value='{{l.code}}' {% if l.code == lang.lang_code %}selected{% endif %}>{{l.name}}</option>
+            {% endfor %}
+        </select>
         {% block content %}{% endblock content %}
     </body>
 </html>

@@ -5,33 +5,52 @@
 
 use rocket::{
     response::NamedFile,
+    request::{FromRequest, Outcome},
     State,
     Request,
 };
 use rocket_contrib::templates::Template;
 use rocket_contrib::{json::Json, serve::{StaticFiles}};
-use std::collections::HashMap;
 use std::convert::From;
 use std::net::SocketAddr;
 use std::thread;
 
+mod language;
+
+use language::{LangIcon, Language, Game as GameStrings};
+
 #[derive(Serialize)]
-struct SpelForm {
-    code: Option<String>
+struct LangTemplate {
+    langs: Vec<LangIcon>,
+    lang: Language,
 }
-
-#[derive(Serialize)]
-struct Empty {
-
+impl FromRequest<'_, '_> for LangTemplate {
+    type Error = ();
+    fn from_request(req: &Request) -> Outcome<Self, Self::Error> {
+        Outcome::Success(LangTemplate {
+            langs: language::langs(),
+            lang: Language::from_request(req)?
+        })
+    }
 }
 
 #[get("/")]
-fn index() -> Template {
-    Template::render("index", &Empty{})
+fn index(lt: LangTemplate) -> Template {
+    Template::render("index", &lt)
 }
 #[get("/spel?<code>")]
-fn spel(code: Option<String>) -> Template {
-    Template::render("spel", &SpelForm{code})
+#[allow(unused_variables)]
+fn spel(lt: LangTemplate, code: Option<String>) -> Template {
+    Template::render("spel", &lt)
+}
+#[get("/strings/<code>")]
+fn lang(code: String) -> Option<Json<GameStrings>> {
+    let dot = code.rfind('.')?;
+    if &code[dot..] != ".json" {
+        dbg!(code);
+        return None;
+    }
+    language::get_language(&code[..dot]).map(|l| Json(l.game))
 }
 
 #[get("/ip")]
@@ -43,7 +62,6 @@ fn ip(addr: SocketAddr) -> String {
 struct Ip {
     ip: String,
 }
-
 #[get("/ip.json")]
 fn ip_json(addr: SocketAddr) -> Json<Ip> {
     Json(Ip {
@@ -71,9 +89,18 @@ fn favicon() -> std::io::Result<NamedFile> {
 
 #[catch(404)]
 fn not_found(req: &Request) -> Template {
-    let mut map = HashMap::new();
-    map.insert("path", req.uri().path());
-    Template::render("error/404", &map)
+    #[derive(Serialize)]
+    struct NotFoundTemplate<'a> {
+        path: &'a str,
+        lang: Language,
+        langs: Vec<LangIcon>
+    }
+
+    Template::render("error/404", &NotFoundTemplate{
+        path: req.uri().path(),
+        lang: Language::from_request(req).unwrap(),
+        langs: language::langs()
+    })
 }
 
 #[inline]
@@ -90,6 +117,7 @@ fn rocket() -> rocket::Rocket {
                 ip_json,
                 favicon,
                 overview,
+                lang,
             ],
         )
         .attach(Template::fairing())

@@ -7,6 +7,18 @@ app.stage.interactive = true;
 PIXI.Loader.shared.add("static/konge.png").add("static/hirdmann.png").add("static/aatakar.png").add("static/brett.png").add("static/brett_stor.png").load(setup);
 
 let texes = {};
+let strings = {};
+
+(function() {
+    const httpReq = new XMLHttpRequest();
+    const lang = document.getElementsByTagName('html')[0].lang;
+    httpReq.open("GET", `/strings/${lang}.json`, true);
+    httpReq.onreadystatechange = function () {
+        if (httpReq.readyState == 4 && httpReq.status == 200)
+            strings = JSON.parse(httpReq.responseText);
+    }
+    httpReq.send(null);
+})();
 
 function texture(name) {
     if (!texes[name]) {
@@ -238,39 +250,35 @@ let started = false;
 let aatak;
 
 function onClose(event) {
-    msgBox(null, `Noko gjekk kanskje gale. Koppla av: ${event.reason}`, 'error');
+    msgBox(null, `${strings.close_error} ${event.reason}`, 'error');
 }
 
 const senderName = function() {
     let senderName = {
-        '0': 'Hirdi',
-        '1': 'Åtak'
+        '0': strings.team_hirdi,
+        '1': strings.team_aatak
     };
     senderName['hirdi'] = senderName['false'] = senderName['0'];
     senderName['åtak'] = senderName['aatak'] = senderName['true'] = senderName['1'];
     return senderName;
 }();
-const end = {
-    true: 'Kongen vart slegen',
-    false: 'Kongen slapp undan',
-};
 
 function onMessage(event) {
     if (event.data.startsWith('HOST_OK ')) {
         code = event.data.substr(8);
         aatak = false;
 
-        document.getElementById('code').innerHTML = `Gjev venen din denna koda so dei kann verta med: ${code}`;
+        document.getElementById('code').innerHTML = `${strings.code} ${code}`;
 
-        msgBox(null, "Kopla til.", "info");
+        msgBox(null, strings.host_success, "info");
     } else if (event.data.startsWith('JOIN_OK ')) {
         if (code != event.data.substr(8)) {
             console.error(`Our code ${code} didn't match the code in the response ${event.data}`);
-            msgBox(null, `Tenar gav feil svar. Eg venta sessionskoda ${code}, men fekk ${event.data}!`, 'error');
+            msgBox(null, `${strings.join_fail}${code}${strings.join_fail2}${event.data}!`, 'error');
             socket.close();
         } else {
             aatak = true;
-            msgBox(null, "Kopla til runde.", "info");
+            msgBox(null, strings.join_success, "info");
         }
     } else if (event.data.startsWith('DELETE ')) {
         const args = event.data.substr(7).split(' ');
@@ -290,12 +298,7 @@ function onMessage(event) {
         board.find(x, y).move(dx, dy);
         board.aatakTur = !board.aatakTur;
 
-        let msg = "";
-        if (board.aatakTur == aatak) {
-            msg = "Det er turen din att.";
-        } else {
-            msg = "Det er turen til motstandaren.";
-        }
+        const msg = board.aatakTur == aatak ? strings.your_turn : strings.opponents_turn; 
         msgBox(null, msg, "info");
     } else if (!started && event.data.startsWith('START')) {
         started = true;
@@ -303,22 +306,18 @@ function onMessage(event) {
         app.renderer.plugins.interaction.on('pointermove', onMove);
         app.renderer.plugins.interaction.on('pointerup', onUp);
 
-        msgBox(null, "Spelet er no i gang" + (
-            board.aatakTur == aatak ?
-            ' og du kann byrja.' :
-            ', men det er ikkje du som byrjar.'
-        ), "info");
+        msgBox(null, strings.game_start + strings.game_start2[board.aatakTur == aatak], 'info');
     } else if (event.data.startsWith('CHAT_MSG ')) {
         const body = event.data.substr('CHAT_MSG '.length);
         const sender = body.split(' ')[0];
-        const sender_name = senderName[sender] || 'Ukjend';
+        const sender_name = senderName[sender] || strings.unknown;
         const msg = body.substr(sender.length+1);
 
         msgBox(sender_name, msg);
     } else if (event.data.startsWith('WIN')) {
-        msgBox(null, `${end[aatak]}. Til lukke; du hev vunne!`);
+        msgBox(null, `${strings.end[aatak]}. ${strings.game_lose}`);
     } else if (event.data.startsWith('LOSE')) {
-        msgBox(null, `${end[!aatak]}. Betre hell neste gong; du tapte :(`);
+        msgBox(null, `${strings.end[!aatak]}. ${strings.game_win}`);
     }
 }
 function onDown(event) {
