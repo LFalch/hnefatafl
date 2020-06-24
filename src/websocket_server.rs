@@ -537,7 +537,7 @@ impl WebSocketServer {
                             games_lock.remove(&dead);
                         }
                     }
-                    thread::sleep(std::time::Duration::from_millis(2));
+                    thread::sleep(std::time::Duration::from_nanos(50));
                 }
             });
         }
