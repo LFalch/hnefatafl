@@ -1,0 +1,55 @@
+{
+    "lang_code": "en",
+    "display_name": "English",
+    "index_title": "Hnefatafl",
+    "welcome": "Welcome to this page for playing Hnefatafl.",
+    "new_game": "Make new game",
+    "or_join": "Or join a friend's game",
+    "game_code": "Game-code:",
+    "join": "Join",
+    "not_found_title": "Not found",
+    "the_page": "The page ",
+    "was_not_found": " could not be found.",
+    "rules": {
+        "rules": "Rules",
+        "intro": "The point of the game is, for the Attack, to capture the king. The King's Hird is fighting the Attackers who outnumber them and the King has to escape. The Attackers have won if the kong is alone with only attackers surrounding. The King and the Hird have won if the King manages to escape to one of the 4 Castles in each corner of the board.",
+        "placing_pieces_header": "Beggining placement of pieces",
+        "placing_pieces": "The 13 defending (here yellow) pieces (the King and his 12 Hirdmen) are put in the marked squares in the middle of the board with the King in the very middle (the King's starting Castle). The 24 attacking (here red) pieces (the Attack) are put in the marked squares on each of the four sides.",
+        "moving_pieces_header": "Moving pieces (turns)",
+        "moving_pieces": "The Attack always has the first turn. The turn is then handed back and forth between the two teams throughout the game. All Attackers and Hirdmen move in the same way: A piece can be moved to all sides one or more squares to an unoccupied square (like the Rook in chess), but not diagonally. You cannot jump over other pieces, and only the King can stand on the square in the middle (the King's castle), but other pieces can jump over it if you want to. It is only allowed for the King to move in the the corner squares (the four Castles to escape to).",
+        "taking_pieces_header": "Taking pieces",
+        "taking_pieces": "A soldier (attacker or hirdman) is taken when it an opponent on one side of it and gets another on the other side (see the picture). The piece is then removed from the game. Keep in mind though, that a soldier is not taken if it itself moves into a square between two opponents. A soldier is also taken if it has one of the corner castles on its side and an opponent on the other (see picture). The King himself can also take part in taking Attackers like the Hird can, but cannot himself be taken.",
+        "hirdmann_killed_header": "Soldier gets taken:",
+        "hirdmann_killed": "The hirdman is killed when on of the Attackers move like the arrows show.",
+        "aatakar_killed_header": "Soldier gets taken:",
+        "aatakar_killed": "The Attacker is killed when he stands with \"their back against\" the Castle and a Hirdman moves to the sqaure on the other side.",
+        "who_wins_header": "Who wins",
+        "who_wins": "The King wins if he manages to escape to one of the Castles in the corners. The King has lost if he is closed in between only Attackers and cannot move (see picture). He has also lost if he is closed in with \"his back against his own Castle\" in the middle of the board with Attackers on the three other sides.",
+        "king_killed_header": "The king is slain:",
+        "king_killed": "The is slain when he has only Attackers on all sides and cannot get aways."
+    },
+    "game": {
+        "close_error": "Something might've gone wrong. Disconnected:",
+        "end": {
+            "true": "The king was slain",
+            "false": "The king escaped"
+        },
+        "code": "Give your friend this code so they can join:",
+        "host_success": "Connected.",
+        "join_fail": "Server gave incorrected answer, excepted game code ",
+        "join_fail2": ", but got ",
+        "join_success": "Connected to session.",
+        "your_turn": "It is your turn again.",
+        "opponents_turn": "It's your opponent's turn.",
+        "game_start": "The game has now begun",
+        "game_start2": {
+            "true": " and you're starting.",
+            "false": ", but you're not starting."
+        },
+        "game_win": "Congratulations; you won!",
+        "game_lose": "Better luck next time; you lost :(",
+        "team_aatak": "Attack",
+        "team_hirdi": "The Hird",
+        "unknown": "Unknown"
+    }
+}
