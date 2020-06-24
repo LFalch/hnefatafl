@@ -1,11 +1,85 @@
-use std::fs::File;
-use std::path::Path;
+use std::fs::{self, File};
+use std::path::{PathBuf, Path};
+use std::time::SystemTime;
+use std::collections::hash_map::{HashMap, Entry};
+use std::sync::{Arc, Mutex};
+
 use serde_json::from_reader;
 
 use rocket::Request;
-use rocket::request::{FromRequest, Outcome};
+use rocket::request::{FromRequest, State, Outcome};
 
 use rocket_accept_language::AcceptLanguage;
+
+pub type SharedLanguageCache = Arc<Mutex<LanguageCache>>;
+
+#[inline]
+pub fn new_shared_language_cache() -> SharedLanguageCache {
+    Arc::new(Mutex::new(LanguageCache::default()))
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct LanguageCache {
+    inner: HashMap<String, CachedLanguage>,
+}
+
+impl LanguageCache {
+    pub fn get(&mut self, code: &str) -> Option<Language> {
+        match self.inner.entry(code.to_owned()) {
+            Entry::Occupied(mut oe) => {
+                let file_last_modified = fs::metadata(path(code)?)
+                    .map(|m| m.modified().expect("Unsupported platform"))
+                    .unwrap_or(SystemTime::UNIX_EPOCH);
+                
+                if oe.get().last_modified < file_last_modified {
+                    if let Some(lang) = CachedLanguage::read(code) {
+                        *oe.get_mut() = lang;
+                        Some(oe.get().language.clone())
+                    } else {
+                        oe.remove();
+                        None
+                    }
+                } else {
+                    Some(oe.get().language.clone())
+                }
+            }
+            Entry::Vacant(ve) => {
+                CachedLanguage::read(code).map(|lang| {
+                    ve.insert(lang).language.clone()
+                })
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+struct CachedLanguage {
+    language: Language,
+    last_modified: SystemTime,
+}
+
+impl CachedLanguage {
+    fn read(code: &str) -> Option<Self> {
+        let file = File::open(path(code)?).ok()?;
+        eprintln!("Reading {}", code);
+        Some(CachedLanguage {
+            last_modified: file.metadata().ok()?.modified().expect("Unsupported platform"),
+            language: from_reader(file).ok()?,
+        })
+    }
+}
+
+fn path(code: &str) -> Option<PathBuf> {
+    let languages = Path::new("languages/");
+
+    let mut path = languages.join(code);
+    path.set_extension("json");
+    if path.parent() != Some(languages) {
+        None
+    } else {
+        Some(path)
+    }
+}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct LangIcon {
@@ -13,35 +87,27 @@ pub struct LangIcon {
     name: String
 }
 
-pub fn langs() -> Vec<LangIcon> {
+pub fn langs(lc: &mut LanguageCache) -> Vec<LangIcon> {
     Path::new("languages/").read_dir().unwrap()
         .filter_map(|entry| {
             let path = entry.ok()?.path();
-            let file = File::open(&path).ok()?;
-            let lang: Language = from_reader(file).ok()?;
+            let code = path.file_stem()?.to_os_string().into_string().ok()?;
+
+            let lang = lc.get(&code)?;
             Some(LangIcon {
-                code: path.file_stem()?.to_os_string().into_string().ok()?,
+                code,
                 name: lang.display_name,
             })
         })
         .collect()
 }
 
-pub fn get_language(code: &str) -> Option<Language> {
-    let languages = Path::new("languages/");
-
-    let mut path = languages.join(code);
-    path.set_extension("json");
-    if path.parent() != Some(languages) {
-        return None;
-    }
-    let file = File::open(path).ok()?;
-    from_reader(file).ok()
-}
-
 impl FromRequest<'_, '_> for Language {
     type Error = ();
     fn from_request(req: &Request) -> Outcome<Self, Self::Error> {
+        let slc = req.guard::<State<SharedLanguageCache>>()?.inner().clone();
+        let mut lc = slc.lock().unwrap();
+
         let cookies = req.cookies();
         let code = if let Some(cookie) = cookies.get("lang") {
             cookie.value()
@@ -49,14 +115,14 @@ impl FromRequest<'_, '_> for Language {
             for locale in AcceptLanguage::from_request(req).unwrap().accept_language {
                 let code = locale.get_language();
 
-                if let Some(lang) = get_language(code) {
+                if let Some(lang) = lc.get(code) {
                     return Outcome::Success(lang);
                 }
             }
             ""
         };
         Outcome::Success(
-            get_language(code).unwrap_or_else(|| get_language("no").unwrap())
+            lc.get(code).unwrap_or_else(|| lc.get("no").unwrap())
         )
     }
 }

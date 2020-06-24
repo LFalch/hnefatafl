@@ -16,7 +16,7 @@ use std::thread;
 
 mod language;
 
-use language::{LangIcon, Language, Game as GameStrings};
+use language::{new_shared_language_cache, SharedLanguageCache, LangIcon, Language, Game as GameStrings};
 
 #[derive(Serialize)]
 struct LangTemplate {
@@ -26,8 +26,11 @@ struct LangTemplate {
 impl FromRequest<'_, '_> for LangTemplate {
     type Error = ();
     fn from_request(req: &Request) -> Outcome<Self, Self::Error> {
+        let langs = {
+            language::langs(&mut req.guard::<State<SharedLanguageCache>>()?.inner().clone().lock().unwrap())
+        };
         Outcome::Success(LangTemplate {
-            langs: language::langs(),
+            langs,
             lang: Language::from_request(req)?
         })
     }
@@ -54,13 +57,13 @@ fn spel(lt: LangTemplate, code: Option<String>) -> Template {
     Template::render("spel", &lt)
 }
 #[get("/strings/<code>")]
-fn lang(code: String) -> Option<Json<GameStrings>> {
+fn lang(code: String, slc: State<SharedLanguageCache>) -> Option<Json<GameStrings>> {
     let dot = code.rfind('.')?;
     if &code[dot..] != ".json" {
         dbg!(code);
         return None;
     }
-    language::get_language(&code[..dot]).map(|l| Json(l.game))
+    slc.lock().unwrap().get(&code[..dot]).map(|l| Json(l.game))
 }
 
 #[get("/overview")]
@@ -113,6 +116,7 @@ fn rocket() -> rocket::Rocket {
             ],
         )
         .attach(Template::fairing())
+        .manage(new_shared_language_cache())
         .register(catchers![not_found])
 }
 
