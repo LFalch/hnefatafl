@@ -75,8 +75,7 @@ pub struct Language {
     pub join: String,
 
     pub not_found_title: String,
-    pub the_page: String,
-    pub was_not_found: String,
+    pub the_page_was_not_found: String,
 
     pub game_title: String,
     pub special_thanks: String,
@@ -113,7 +112,6 @@ pub struct Game {
     code: String,
     host_success: String,
     join_fail: String,
-    join_fail2: String,
     join_success: String,
     your_turn: String,
     opponents_turn: String,

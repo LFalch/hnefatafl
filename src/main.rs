@@ -86,21 +86,19 @@ fn not_found(req: &Request) -> Template {
     #[derive(Serialize)]
     struct NotFoundTemplate<'a> {
         path: &'a str,
-        lang: Language,
-        langs: Vec<LangIcon>
+        #[serde(flatten)]
+        lang_template: LangTemplate
     }
 
     Template::render("error/404", &NotFoundTemplate{
         path: req.uri().path(),
-        lang: Language::from_request(req).unwrap(),
-        langs: language::langs()
+        lang_template: LangTemplate::from_request(req).unwrap()
     })
 }
 
 #[inline]
 fn rocket() -> rocket::Rocket {
     rocket::ignite()
-        // Have Rocket manage the database pool.
         .mount("/static/", StaticFiles::from("static"))
         .mount(
             "/",

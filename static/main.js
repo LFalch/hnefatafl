@@ -8,17 +8,29 @@ PIXI.Loader.shared.add("static/konge.png").add("static/hirdmann.png").add("stati
 
 let texes = {};
 let strings = {};
+let onReloadStringsCbs = [];
 
-(function() {
+const onReloadStrings = function() {
+    for (const cb of onReloadStringsCbs) {
+        cb();
+    }
+}
+
+function loadStrings() {
     const httpReq = new XMLHttpRequest();
     const lang = document.getElementsByTagName('html')[0].lang;
     httpReq.open("GET", `/strings/${lang}.json`, true);
     httpReq.onreadystatechange = function () {
-        if (httpReq.readyState == 4 && httpReq.status == 200)
+        if (httpReq.readyState == 4 && httpReq.status == 200) {
             strings = JSON.parse(httpReq.responseText);
+        }
+        
+        onReloadStrings();
     }
     httpReq.send(null);
-})();
+};
+
+loadStrings();
 
 function texture(name) {
     if (!texes[name]) {
@@ -203,6 +215,7 @@ let socket;
 let code;
 
 function setup() {
+    onReloadStrings();
     board = new Board(false);
     let protocol = "ws:";
     let path = ":2794"
@@ -259,28 +272,34 @@ function onClose(event) {
     msgBox(null, `${strings.close_error} ${event.reason}`, 'error');
 }
 
-const senderName = function() {
-    let senderName = {
+let senderName = {};
+onReloadStringsCbs.push(function() {
+    senderName = {
         '0': strings.team_hirdi,
         '1': strings.team_aatak
     };
     senderName['hirdi'] = senderName['false'] = senderName['0'];
     senderName['åtak'] = senderName['aatak'] = senderName['true'] = senderName['1'];
-    return senderName;
-}();
+});
 
 function onMessage(event) {
     if (event.data.startsWith('HOST_OK ')) {
         code = event.data.substr(8);
         aatak = false;
 
-        document.getElementById('code').innerHTML = `${strings.code} ${code}`;
+        onReloadStringsCbs.push(function() {
+            document.getElementById('code').innerHTML = `${strings.code} ${code}`;
+        });
+        onReloadStrings();
 
         msgBox(null, strings.host_success, "info");
     } else if (event.data.startsWith('JOIN_OK ')) {
         if (code != event.data.substr(8)) {
             console.error(`Our code ${code} didn't match the code in the response ${event.data}`);
-            msgBox(null, `${strings.join_fail}${code}${strings.join_fail2}${event.data}!`, 'error');
+
+            const join_fail = strings.join_fail.replace('$CODE', code);
+
+            msgBox(null, `${join_fail}${event.data}!`, 'error');
             socket.close();
         } else {
             aatak = true;

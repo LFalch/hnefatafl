@@ -4,6 +4,17 @@
 <script src="static/pixi.min.js"></script>
 <link rel="stylesheet" type="text/css" href="/static/spel.css">
 {% endblock head %}
+{% block langChoose %}
+<script>
+function langChoose() {
+    const choice = document.getElementById('langChoice').value;
+
+    document.cookie = `lang=${choice}`;
+    document.documentElement.lang = choice;
+    loadStrings();
+}
+</script>
+{% endblock langChoose %}
 {% block content %}
 <h1>{{lang.game_title}}</h1>
 <p id="code"></p>
