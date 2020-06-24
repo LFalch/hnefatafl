@@ -57,13 +57,17 @@ fn spel(lt: LangTemplate, code: Option<String>) -> Template {
     Template::render("spel", &lt)
 }
 #[get("/strings/<code>")]
-fn lang(code: String, slc: State<SharedLanguageCache>) -> Option<Json<GameStrings>> {
+fn strings(code: String, slc: State<SharedLanguageCache>) -> Option<Json<GameStrings>> {
+    lang(code, slc).map(|l| Json(l.0.game))
+}
+#[get("/lang/<code>")]
+fn lang(code: String, slc: State<SharedLanguageCache>) -> Option<Json<Language>> {
     let dot = code.rfind('.')?;
     if &code[dot..] != ".json" {
         dbg!(code);
         return None;
     }
-    slc.lock().unwrap().get(&code[..dot]).map(|l| Json(l.game))
+    slc.lock().unwrap().get(&code[..dot]).map(|l| Json(l))
 }
 
 #[get("/overview")]
@@ -112,6 +116,7 @@ fn rocket() -> rocket::Rocket {
                 index_php,
                 favicon,
                 overview,
+                strings,
                 lang,
             ],
         )
