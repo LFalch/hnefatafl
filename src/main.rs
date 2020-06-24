@@ -4,7 +4,7 @@
 #[macro_use] extern crate serde_derive;
 
 use rocket::{
-    response::NamedFile,
+    response::{NamedFile, Redirect},
     request::{FromRequest, Outcome},
     State,
     Request,
@@ -12,7 +12,6 @@ use rocket::{
 use rocket_contrib::templates::Template;
 use rocket_contrib::{json::Json, serve::{StaticFiles}};
 use std::convert::From;
-use std::net::SocketAddr;
 use std::thread;
 
 mod language;
@@ -34,6 +33,17 @@ impl FromRequest<'_, '_> for LangTemplate {
     }
 }
 
+#[get("/index.html")]
+#[inline(always)]
+fn index_html(lt: LangTemplate) -> Template {
+    index(lt)
+}
+#[get("/index.php")]
+#[inline(always)]
+fn index_php() -> Redirect {
+    Redirect::permanent("/")
+}
+
 #[get("/")]
 fn index(lt: LangTemplate) -> Template {
     Template::render("index", &lt)
@@ -51,22 +61,6 @@ fn lang(code: String) -> Option<Json<GameStrings>> {
         return None;
     }
     language::get_language(&code[..dot]).map(|l| Json(l.game))
-}
-
-#[get("/ip")]
-fn ip(addr: SocketAddr) -> String {
-    format!("{}\n", addr.ip())
-}
-
-#[derive(Serialize)]
-struct Ip {
-    ip: String,
-}
-#[get("/ip.json")]
-fn ip_json(addr: SocketAddr) -> Json<Ip> {
-    Json(Ip {
-        ip: format!("{}", addr.ip())
-    })
 }
 
 #[get("/overview")]
@@ -113,8 +107,8 @@ fn rocket() -> rocket::Rocket {
             routes![
                 spel,
                 index,
-                ip,
-                ip_json,
+                index_html,
+                index_php,
                 favicon,
                 overview,
                 lang,
