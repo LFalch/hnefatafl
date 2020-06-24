@@ -2,6 +2,7 @@
 <html lang="{{lang.lang_code}}">
     <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>{% block title %}{% endblock title %} - Hnefatafl</title>
         {% block head %}{% endblock head %}
         {% block langChoose %}
