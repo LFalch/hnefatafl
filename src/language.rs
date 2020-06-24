@@ -3,7 +3,6 @@ use std::path::Path;
 use serde_json::from_reader;
 
 use rocket::Request;
-use rocket::http::Cookie;
 use rocket::request::{FromRequest, Outcome};
 
 use rocket_accept_language::AcceptLanguage;
@@ -43,7 +42,7 @@ pub fn get_language(code: &str) -> Option<Language> {
 impl FromRequest<'_, '_> for Language {
     type Error = ();
     fn from_request(req: &Request) -> Outcome<Self, Self::Error> {
-        let mut cookies = req.cookies();
+        let cookies = req.cookies();
         let code = if let Some(cookie) = cookies.get("lang") {
             cookie.value()
         } else {
@@ -51,7 +50,6 @@ impl FromRequest<'_, '_> for Language {
                 let code = locale.get_language();
 
                 if let Some(lang) = get_language(code) {
-                    cookies.add(Cookie::new("lang", code.to_owned()));
                     return Outcome::Success(lang);
                 }
             }
@@ -67,6 +65,7 @@ impl FromRequest<'_, '_> for Language {
 pub struct Language {
     pub lang_code: String,
     pub display_name: String,
+    pub cookie_accept: String,
     pub index_title: String,
     pub welcome: String,
     pub new_game: String,

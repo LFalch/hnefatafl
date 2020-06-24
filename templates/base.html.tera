@@ -7,8 +7,19 @@
         {% block langChoose %}
         <script>
         function langChoose() {
+            if (!window.localStorage.getItem('cookieAccept')) {
+                const accept = confirm("{{lang.cookie_accept}}");
+                if (accept) {
+                    window.localStorage.setItem('cookieAccept', true);
+                }else {
+                    document.cookie = 'lang=;expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                    return;
+                }
+            }
+            {% block langChooseHandling %}
             document.cookie = `lang=${document.getElementById('langChoice').value}`;
             document.location.reload();
+            {% endblock langChooseHandling %}
         }
         </script>
         {% endblock langChoose %}
