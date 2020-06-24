@@ -13,7 +13,7 @@
     "rules": {
         "rules": "Rules",
         "intro": "The point of the game is, for the Attack, to capture the king. The King's Hird is fighting the Attackers who outnumber them and the King has to escape. The Attackers have won if the kong is alone with only attackers surrounding. The King and the Hird have won if the King manages to escape to one of the 4 Castles in each corner of the board.",
-        "placing_pieces_header": "Beggining placement of pieces",
+        "placing_pieces_header": "Initial placement of pieces",
         "placing_pieces": "The 13 defending (here yellow) pieces (the King and his 12 Hirdmen) are put in the marked squares in the middle of the board with the King in the very middle (the King's starting Castle). The 24 attacking (here red) pieces (the Attack) are put in the marked squares on each of the four sides.",
         "moving_pieces_header": "Moving pieces (turns)",
         "moving_pieces": "The Attack always has the first turn. The turn is then handed back and forth between the two teams throughout the game. All Attackers and Hirdmen move in the same way: A piece can be moved to all sides one or more squares to an unoccupied square (like the Rook in chess), but not diagonally. You cannot jump over other pieces, and only the King can stand on the square in the middle (the King's castle), but other pieces can jump over it if you want to. It is only allowed for the King to move in the the corner squares (the four Castles to escape to).",

@@ -12,21 +12,21 @@
     "was_not_found": " vart ikkje funne.",
     "rules": {
         "rules": "Reglar",
-        "intro": "Spelet gjeng ut på å taka kongen til fange. Hirdi åt kongen kjempar mot åtakarane som er i yvertal og kongen må fly. Åtakarane hev vunne um kongen er åleina med berre åtakarar kring seg. Kongen og hirdi hava vunne um kongen greider å fly til ei av dei 4 borgene sine (éi i kvart hyrna av tavlet).",
+        "intro": "Spelet gjeng ut på å taka kongen til fange. Hirdi åt kongen kjempar mot åtakarane som ero i fleirtal og kongen må flya. Åtakarane hava vunne um kongen er åleine med berre åtakarar kring seg. Kongen og hirdi hava vunne um kongen greider å flya til ei av dei 4 borgene sine (éi i kvart hyrna av tavlet).",
         "placing_pieces_header": "Setjing av brikkone",
         "placing_pieces": "Dei 13 kvite brikkone (kongen og dei 12 hirdmennene hans) verta sette ut i dei merkte felti midt på tavlet med kongen i midten (kongsborgi). Dei 24 svarte brikkone (åtakarane) verta sette ut i dei merkte felti på kvar av dei fjore sidone.",
         "moving_pieces_header": "Flytjing av brikkone (stikk)",
-        "moving_pieces": "Åtakarane taka alltid fyrste stikk. Spelet held so fram skiftande millom dei tvo partane. Alle åtakarane og hirdmennene verta flutte på same måte: Ei brikka kann verta flutt til alle sidor eit eller fleire felt til ein lìdug stad (på same måte som tårnet i skåk), men ikkje skeivt. Det er ikkje lov å hoppa yver andre brikkor. Berre kongen kann standa på feltet i midten (kongsborgi), men andre kunna fritt hoppa yver um ein vil. Det er helder ingen annan en kongen som kann ganga i hyrnefelti (dei fjore borgene kongen kann fly åt).",
+        "moving_pieces": "Åtakarane taka alltid fyrste stikk. Spelet held so fram skiftande millom dei tvo partane. Alle åtakarane og hirdmennene verta flutte på same måte: Ei brikka kann verta flutt til alle sidor eit eller fleire felt til ein lìdug stad (på same måte som tårnet i skåk), men ikkje skeivt. Det er ikkje lov å hoppa yver andre brikkor. Berre kongen kann standa på feltet i midten (kongsborgi), men andre kunna fritt hoppa yver um ein vil. Det er helder ingen annan en kongen som kann ganga i hyrnefelti (dei fjore borgene kongen kann flya åt).",
         "taking_pieces_header": "Slag av brikkor",
-        "taking_pieces": "Ein hermann (åtakar eller hirdmann) vert slegen nær han hev ein motstandar på éi sida og fær ein annan på hi (sjå teikningi). Brikka vert då teki burt frå tavlet. Derimot vert ikkje hermannen slegen um han sjølv flyt inn i eit liknande felt millom tvo motstandarar. Ein hermann vert òg slegen um han hev ei av hyrneborgene på  éi sida  og ein motstandar på hi (sjå teikningi). Kongen kann sjølv vera med på å slå åtakarane på same måte som hirdi si, men kann ikkje sjølv verta slegen.",
+        "taking_pieces": "Ein hermann (åtakar eller hirdmann) vert slegen nær han hev ein motstandar på éi sida og fær ein annan på hi (sjå teikningi). Brikka vert då teki burt frå tavlet. Derimot vert ikkje hermannen slegen um han sjølv flyt inn i eit liknande felt millom tvei motstandarar. Ein hermann vert òg slegen um han hev ei av hyrneborgene på éi sida og ein motstandar på hi (sjå teikningi). Kongen kann sjølv vera med på å slå åtakarane på same måte som hirdi si, men kann ikkje sjølv verta slegen.",
         "hirdmann_killed_header": "Hermann vert drepen:",
         "hirdmann_killed": "Hirdmannen vert drepen nær ein av åtakarane vert flutt som pilene visa.",
         "aatakar_killed_header": "Hermann vert drepen:",
         "aatakar_killed": "Åtakaren vert drepen nær han stend med «ryggen mot» kongsborgi og hirdmannen vert flutt til feltet på hi sida.",
         "who_wins_header": "Kven vinn",
-        "who_wins": "Kongen vinn um han greider å fly til ei av borgene sine (hyrnefelti). Han hev tapa um han vert stengd inne millom fjore åtakarar og ikkje kann flytja seg (sjå teikningi). Han hev òg tapa um han er stengd inn med «ryggen mot borgi si eigi» i midte av tavle og med åtakarar på trjå sidor.",
+        "who_wins": "Kongen vinn um han greider å flya åt ei av borgene sine (hyrnefelti). Han hev tapa um han vert stengd inne millom fjore åtakarar og ikkje kann flytja seg (sjå teikningi). Han hev òg tapa um han er stengd inne med «ryggen mot borgi si» i midten av tavlet og med åtakarar på trjå sidor.",
         "king_killed_header": "Kongen vert teken:",
-        "king_killed": "Kongen er teken nær han hev åtakarar på alle sidor og ikkje kann sleppa fri."
+        "king_killed": "Kongen er teken nær han hev åtakarar på alle sidor og ikkje kann sleppa undan."
     },
     "game": {
         "close_error": "Noko gjekk kanskje gale. Koppla av:",
