@@ -12,7 +12,7 @@ use std::fmt::{self, Display};
 use std::net::TcpStream;
 use std::io::ErrorKind as IoErrorKind;
 
-use rand::{seq::SliceRandom, thread_rng};
+use rand::{Rng, thread_rng};
 
 type WsReader = Reader<TcpStream>;
 type WsWriter = Writer<TcpStream>;
@@ -382,20 +382,16 @@ impl Display for Game {
     }
 }
 
-const CHARS: [char; 39] = [
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'Æ', 'Ø', 'Å', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
-];
-
-fn gen_game_code() -> String {
-    CHARS.choose_multiple(&mut thread_rng(), 5).copied().collect()
+fn gen_game_code() -> u16 {
+    thread_rng().gen()
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum Command {
     Host(Option<String>),
-    Join(String),
-    HostOk(String),
-    JoinOk(String, Option<String>),
+    Join(u16),
+    HostOk(u16),
+    JoinOk(u16, Option<String>),
     Start,
     Move(i8, i8, i8, i8),
     Delete(i8, i8),
@@ -417,9 +413,9 @@ impl FromStr for Command {
         let mut split = s.split(' ');
         match split.next().ok_or(())? {
             "HOST" => Ok(Command::Host(split.next().map(|s| s.to_owned()))),
-            "JOIN" => Ok(Command::Join((split.next().ok_or(())?).to_owned())),
-            "HOST_OK" => Ok(Command::HostOk((split.next().ok_or(())?).to_owned())),
-            "JOIN_OK" => Ok(Command::JoinOk((split.next().ok_or(())?).to_owned(), split.next().map(|s| s.to_owned()))),
+            "JOIN" => Ok(Command::Join(u16::from_str_radix(split.next().ok_or(())?, 16).map_err(|_| ())?)),
+            "HOST_OK" => Ok(Command::HostOk(u16::from_str_radix(split.next().ok_or(())?, 16).map_err(|_| ())?)),
+            "JOIN_OK" => Ok(Command::JoinOk(u16::from_str_radix(split.next().ok_or(())?, 16).map_err(|_| ())?, split.next().map(|s| s.to_owned()))),
             "START" => Ok(Command::Start),
             "MOVE" => Ok(Command::Move(
                 split.next().ok_or(())?.parse().map_err(|_| ())?,
@@ -454,10 +450,10 @@ impl Display for Command {
         match self {
             Command::Host(Some(s)) => write!(f, "HOST {}", s),
             Command::Host(None) => write!(f, "HOST"),
-            Command::Join(s) => write!(f, "JOIN {}", s),
-            Command::HostOk(s) => write!(f, "HOST_OK {}", s),
-            Command::JoinOk(s, Some(s2)) => write!(f, "JOIN_OK {} {}", s, s2),
-            Command::JoinOk(s, None) => write!(f, "JOIN_OK {}", s),
+            Command::Join(c) => write!(f, "JOIN {:X}", c),
+            Command::HostOk(c) => write!(f, "HOST_OK {:X}", c),
+            Command::JoinOk(c, Some(s2)) => write!(f, "JOIN_OK {:X} {}", c, s2),
+            Command::JoinOk(c, None) => write!(f, "JOIN_OK {:X}", c),
             Command::Start => write!(f, "START"),
             Command::Move(a, b, c, d) => write!(f, "MOVE {} {} {} {}", a, b, c, d),
             Command::Delete(a, b) => write!(f, "DELETE {} {}", a, b),
@@ -505,13 +501,13 @@ fn handle(reader: &mut WsReader, sender: &mut WsWriter) -> Result<Command, bool>
 
 #[derive(Clone)]
 pub struct WebSocketServer {
-    pub games: Arc<Mutex<HashMap<String, Session>>>,
+    pub games: Arc<Mutex<HashMap<u16, Session>>>,
 }
 
 impl WebSocketServer {
     pub fn new() -> Self {
         WebSocketServer {
-            games: Arc::new(Mutex::new(HashMap::<String, Session>::new())),
+            games: Arc::new(Mutex::new(HashMap::<u16, Session>::new())),
         }
     }
     pub fn run(self) {
@@ -537,7 +533,7 @@ impl WebSocketServer {
 
                         deads.dedup();
                         for dead in deads {
-                            eprintln!("Killing {}", dead);
+                            eprintln!("Killing {:X}", dead);
                             games_lock.remove(&dead);
                         }
                     }
