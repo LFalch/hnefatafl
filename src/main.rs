@@ -38,13 +38,13 @@ impl FromRequest<'_, '_> for LangTemplate {
 
 #[get("/index.html")]
 #[inline(always)]
-fn index_html(lt: LangTemplate) -> Template {
-    index(lt)
+fn index_html() -> Redirect {
+    Redirect::to(uri!(index))
 }
 #[get("/index.php")]
 #[inline(always)]
 fn index_php() -> Redirect {
-    Redirect::permanent("/")
+    Redirect::permanent(uri!(index))
 }
 
 #[get("/")]
