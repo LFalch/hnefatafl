@@ -10,6 +10,9 @@
     "not_found_title": "Not found",
     "the_page": "The page ",
     "was_not_found": " could not be found.",
+    "game_title": "Game",
+    "special_thanks": "Special thanks to Andrew and Eiliv.",
+    "write_to_opponent_here": "Write a message to your opponent here...",
     "rules": {
         "rules": "Rules",
         "intro": "The point of the game is, for the Attack, to capture the king. The King's Hird is fighting the Attackers who outnumber them and the King has to escape. The Attackers have won if the kong is alone with only attackers surrounding. The King and the Hird have won if the King manages to escape to one of the 4 Castles in each corner of the board.",

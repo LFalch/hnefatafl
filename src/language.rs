@@ -73,9 +73,15 @@ pub struct Language {
     pub or_join: String,
     pub game_code: String,
     pub join: String,
+
     pub not_found_title: String,
     pub the_page: String,
     pub was_not_found: String,
+
+    pub game_title: String,
+    pub special_thanks: String,
+    pub write_to_opponent_here: String,
+
     pub rules: Rules,
     pub game: Game,
 }

@@ -1,11 +1,11 @@
 {% extends "base" %}
-{% block title %}Spel{% endblock title %}
+{% block title %}{{lang.game_title}}{% endblock title %}
 {% block head %}
 <script src="static/pixi.min.js"></script>
 <link rel="stylesheet" type="text/css" href="/static/spel.css">
 {% endblock head %}
 {% block content %}
-<h1>Spel</h1>
+<h1>{{lang.game_title}}</h1>
 <p id="code"></p>
 <div id="container">
     <div id="game"></div>
@@ -14,13 +14,13 @@
                 <div id="boxMessages"></div>
                 <div id="boxChatInput">
                     <form id="formChat">
-                        <input id="inputChat" autocomplete="off" type="text" placeholder="Skriv ei melding til motstandaren din her..." minlength="1" maxlength="100">
+                        <input id="inputChat" autocomplete="off" type="text" placeholder="{{lang.write_to_opponent_here}}" minlength="1" maxlength="100">
                     </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
-<p>Særleg takk til Andrew og Eiliv</p>
+<p>{{lang.special_thanks}}</p>
 <script src="static/main.js"></script>
 {% endblock content %}
