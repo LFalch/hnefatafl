@@ -204,7 +204,13 @@ let code;
 
 function setup() {
     board = new Board(false);
-    socket = new WebSocket(`ws://${document.location.hostname}:2794`, "hnefatafl");
+    let protocol = "ws:";
+    let path = ":2794"
+    if (window.location.protocol === "https:") {
+        protocol = "wss:";
+        path = "/ws";
+    }
+    socket = new WebSocket(`${protocol}//${document.location.hostname}${path}`, "hnefatafl");
     socket.onmessage = onMessage;
     socket.onclose = onClose;
 
