@@ -5,28 +5,35 @@
 <link rel="stylesheet" type="text/css" href="/static/spel.css">
 {% endblock head %}
 {% block langChooseHandling %}
-    const choice = document.getElementById('langChoice').value;
-    document.cookie = `lang=${choice}`;
-    document.documentElement.lang = choice;
-    loadStrings();
+const choice = document.getElementById('langChoice').value;
+document.cookie = `lang=${choice}`;
+document.documentElement.lang = choice;
+loadStrings();
 {% endblock langChoose %}
 {% block content %}
-<h1>{{lang.game_title}}</h1>
-<p id="code"></p>
-<div id="container">
-    <div id="game"></div>
-        <div id="containerChat">
-            <div id="boxChat">
+<div class="container-lg mt-3">
+
+    <div class="ml-3 mb-2">
+        <h1>{{lang.game_title}}</h1>
+        <span id="code"></span>
+    </div>
+    <div id="container" class="row w-100 ml-0">
+        <div id="game" class="col-auto mx-auto"></div>
+        <div id="containerChat" class="col-12 col-md">
+            <div id="boxChat" class="">
                 <div id="boxMessages"></div>
                 <div id="boxChatInput">
                     <form id="formChat">
-                        <input id="inputChat" autocomplete="off" type="text" placeholder="{{lang.write_to_opponent_here}}" minlength="1" maxlength="100">
+                        <input id="inputChat" autocomplete="off" type="text"
+                            placeholder="{{lang.write_to_opponent_here}}" minlength="1" maxlength="100">
                     </form>
                 </div>
             </div>
         </div>
     </div>
+    <div class="ml-3 mb-2">
+        {{lang.special_thanks}}
+    </div>
 </div>
-<p>{{lang.special_thanks}}</p>
 <script src="static/main.js"></script>
 {% endblock content %}

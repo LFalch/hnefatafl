@@ -22,10 +22,12 @@
             {% endblock langChooseHandling %}
         }
         </script>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.bundle.min.js" integrity="sha384-1CmrxMRARb6aLqgBO7yyAxTOQE2AKb9GfXnEo760AUcUmFx3ibVJJAzGytlQcNXd" crossorigin="anonymous"></script>
         {% endblock langChoose %}
     </head>
     <body>
-        <select id="langChoice" onchange="langChoose()">
+        <select class="position-absolute" style="top:0;right:0;" id="langChoice" onchange="langChoose()">
             {% for l in langs %}
             <option value='{{l.code}}' {% if l.code == lang.lang_code %}selected{% endif %}>{{l.name}}</option>
             {% endfor %}
