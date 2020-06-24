@@ -1,0 +1,57 @@
+{
+    "lang_code": "de",
+    "display_name": "Deutsch",
+    "cookie_accept": "Um deine Sprachauswahl zu speichern wir ein Cookie verwendet. Stimmst du der Verwendung von Cookies zu?",
+    "index_title": "Königszabel",
+    "welcome": "Willkommen auf der Webseite für Königszabel.",
+    "new_game": "Neues Spiel erstellen",
+    "or_join": "Oder einem Spiel beitreten",
+    "game_code": "Spielschlüssel:",
+    "join": "Beitreten",
+    "not_found_title": "Nicht gefunden",
+    "the_page_was_not_found": "Die Seite $PATH konnte nicht gefunden werden.",
+    "game_title": "Spiel",
+    "special_thanks": "Besonderer Dank an Andrew und Eiliv.",
+    "write_to_opponent_here": "Schreibe Nachrichten an deinen Gegner hier...",
+    "rules": {
+        "rules": "Regeln",
+        "intro": "Ziel des Spiels für die Angreifer ist es den König zu fangen. Die königliche Garde kämpft gegen die zahlreicheren Angreifer und der König muss fliehen. Die Angreifer gewinnen wenn der König auf allen vier Seiten von Angreifern umgeben ist. Der König und die Garde gewinnen wenn der König es schafft in eine der vier Burgen in den Ecken des Spielfeldes zu fliehen.",
+        "placing_pieces_header": "Initiale Plazierung der Figuren",
+        "placing_pieces": "Die 13 verteidigenden Soldaten (hier gelb), der König und seine 12 Mann starke Garde stehen in einem gekennzeichneten Quadrat in der Mitte des Brettes, mit dem König auf einer Burg in der Mitte. Die 24 Angreifer (hier rot) stehen auf den gekennzeichneten Feldern an den vier Rändern.",
+        "moving_pieces_header": "Figuren bewegen (Züge)",
+        "moving_pieces": "Die Angreifer fangen immer an. Dann wechseln sich Angreifer und Verteidiger ab bis ein Spieler gewinnt. Alle Figuren bewegen sich gleich: Eine Figur kann sich in alle vier Richtungen bewegen ohne über andere Figuren zu springen (wie ein Turm im Schach). Nur der König kann auf der Burg in der Mitte stehen, die Soldaten können sich aber über dieses Feld hinweg bewegen. Auch nur der König kann die Felder in den Ecken des Spielfeldes betreten.",
+        "taking_pieces_header": "Figuren nehmen",
+        "taking_pieces": "Ein Soldat (Angreifer oder Verteidiger) wird vom Gegner genommen wenn es auf zwei gegenüberliegenden Seiten von einer Figur des Gegners umgeben ist (siehe Bild). Der Soldat wird dann vom Spielbrett entfernt. Zu beachten ist jedoch, das der Soldat nicht entfernt wird wenn er sich selbst zwischen zwei gegnerische Figuren bewegt.Zwecks dieser Mechanik zählen die vier Burgen am Rand des Spiels als Soldaten des verteidigenden Königs. Der König selbst wird wie eine Soldat behandelt wenn es darum geht eine angreifende Figur zu nehmen, jedoch kann der König selbst nicht vom Spiel entfernt werden.",
+        "hirdmann_killed_header": "Verteidigender Soldat wird genommen:",
+        "hirdmann_killed": "Der verteidigende Soldat wird genommen wenn der Angreifer sich bewegt wie der Pfeil zeigt.",
+        "aatakar_killed_header": "Angreifender Soldat wird genommen:",
+        "aatakar_killed": "Der angreifende Soldat wird genommen wenn er \"mit dem Rücken\" zur Burg steht und eine Figur des Verteidigers auf die andere Seite rückt.",
+        "who_wins_header": "Königszabel gewinnen",
+        "who_wins": "Der König gewinnt wenn er es schaft sich in eine der vier Burgen in den Ecken des Spielfeldes zu begeben. Der König verliert wenn er auf dem Weg komplett von Angreifern umgeben wurde und sich nicht mehr bewegen kann (siehe Bild). Er kann auch vor seiner eigenen Burg eingeschlossen oder am Rand gefangen werden wenn er auf den drei anderen Seiten von Gegnern umgeben ist.",
+        "king_killed_header": "Der König verliert:",
+        "king_killed": "Der König wird besiegt wenn er auf allen Seiten von Angreifern umgeben ist und sich nicht mehr bewegen kann."
+    },
+    "game": {
+        "close_error": "Etwas ist schief gelaufen. Verbindung abgebrochen:",
+        "end": {
+            "true": "Der König wurde besiegt",
+            "false": "Der König ist geflohen"
+        },
+        "code": "Gebe deinen Freunden diesen Code um deinem Spiel beizutreten:",
+        "host_success": "Verbunden.",
+        "join_fail": "Unerwartete Antwort $CODE vom Server, erwartete ",
+        "join_success": "Verbindung hergestellt.",
+        "your_turn": "Es ist dein Zug.",
+        "opponents_turn": "Dein Gegner ist am Zug.",
+        "game_start": "Das Spielt startet",
+        "game_start2": {
+            "true": " und du fängst an.",
+            "false": ", aber du bist als zweites am Zug."
+        },
+        "game_win": "Glückwunsch; Du hast gewonnen!",
+        "game_lose": "Vielleicht hast du mehr Glück beim nächsten mal; Diesmal hast du aber verloren :(",
+        "team_aatak": "Angreifer",
+        "team_hirdi": "Verteidiger",
+        "unknown": "Unbekannt"
+    }
+}
