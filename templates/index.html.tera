@@ -38,7 +38,6 @@
     </div>
 </div>
 <div class="container">
-
     <h2>{{lang.rules.rules}}</h2>
     <p>{{lang.rules.intro}}</p>
 
@@ -48,20 +47,28 @@
     <h3>{{lang.rules.moving_pieces_header}}</h3>
     <p>{{lang.rules.moving_pieces}}</p>
 
+    <div class="clearfix">
     <h3>{{lang.rules.taking_pieces_header}}</h3>
+    <img src="static/figure_taking.png" class="float-right">
     <p>{{lang.rules.taking_pieces}}</p>
+    </div>
 
+    <div class="clearfix">
     <h4>{{lang.rules.hirdmann_killed_header}}</h4>
+    <img src="static/figure_hirdman_capture.png" class="float-right">
     <p>{{lang.rules.hirdmann_killed}}</p>
 
     <h4>{{lang.rules.aatakar_killed_header}}</h4>
     <p>{{lang.rules.aatakar_killed}}</p>
+    </div>
 
+    <div class="clearfix">
     <h3>{{lang.rules.who_wins_header}}</h3>
+    <img src="static/figure_king_capture.png" class="float-right">
     <p>{{lang.rules.who_wins}}</p>
 
     <h4>{{lang.rules.king_killed_header}}</h4>
     <p>{{lang.rules.king_killed}}</p>
+    </div>
 </div>
-
 {% endblock content %}
