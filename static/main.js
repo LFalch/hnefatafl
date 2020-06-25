@@ -340,9 +340,9 @@ function onMessage(event) {
 
         msgBox(sender_name, msg);
     } else if (event.data.startsWith('WIN')) {
-        msgBox(null, `${strings.end[aatak]}. ${strings.game_lose}`);
+        msgBox(null, `${strings.end[aatak]}. ${strings.game_win}`);
     } else if (event.data.startsWith('LOSE')) {
-        msgBox(null, `${strings.end[!aatak]}. ${strings.game_win}`);
+        msgBox(null, `${strings.end[!aatak]}. ${strings.game_lose}`);
     }
 }
 function onDown(event) {
