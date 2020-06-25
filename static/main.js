@@ -18,7 +18,7 @@ const onReloadStrings = function() {
 
 function loadStrings() {
     const httpReq = new XMLHttpRequest();
-    const lang = document.getElementsByTagName('html')[0].lang;
+    const lang = document.documentElement.lang;
     httpReq.open("GET", `/strings/${lang}.json`, true);
     httpReq.onreadystatechange = function () {
         if (httpReq.readyState == 4 && httpReq.status == 200) {

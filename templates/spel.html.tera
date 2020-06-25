@@ -9,6 +9,23 @@ const choice = select.value;
 document.cookie = `lang=${choice}`;
 document.documentElement.lang = choice;
 loadStrings();
+
+const httpReq = new XMLHttpRequest();
+const lang = document.documentElement.lang;
+httpReq.open("GET", `/lang/${lang}.json`, true);
+httpReq.onreadystatechange = function () {
+    if (httpReq.readyState == 4 && httpReq.status == 200) {
+        const lang = JSON.parse(httpReq.responseText);
+
+        document.getElementById('thanks').innerHTML = lang.special_thanks;
+        document.getElementById('inputChat').placeholder = lang.write_to_opponent_here;
+        document.getElementsByTagName('h1')[0].innerHTML = lang.game_title;
+        document.title = `${lang.game_title} - Hnefatafl`;
+    }
+    
+    onReloadStrings();
+}
+httpReq.send(null);
 {% endblock langChoose %}
 {% block content %}
 <div class="container-lg mt-3">
@@ -31,7 +48,7 @@ loadStrings();
             </div>
         </div>
     </div>
-    <div class="ml-3 mb-2">
+    <div id="thanks" class="ml-3 mb-2">
         {{lang.special_thanks}}
     </div>
 </div>
