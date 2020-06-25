@@ -7,7 +7,7 @@
         {% block head %}{% endblock head %}
         {% block langChoose %}
         <script>
-        function langChoose() {
+        function langChoose(select) {
             if (!window.localStorage.getItem('cookieAccept')) {
                 const accept = confirm("{{lang.cookie_accept}}");
                 if (accept) {
@@ -18,7 +18,7 @@
                 }
             }
             {% block langChooseHandling %}
-            document.cookie = `lang=${document.getElementById('langChoice').value}`;
+            document.cookie = `lang=${select.value}`;
             document.location.reload();
             {% endblock langChooseHandling %}
         }
@@ -27,13 +27,22 @@
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
         <script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin=anonymous"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.bundle.min.js" integrity="sha384-1CmrxMRARb6aLqgBO7yyAxTOQE2AKb9GfXnEo760AUcUmFx3ibVJJAzGytlQcNXd" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.5.0/css/flag-icon.min.css" integrity="sha384-jjBocnsQb7zTYSozEemReuje+/6FUtVswDdIPdDMA6SVLBCt51rVkrz/V/sTnKOu" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/css/bootstrap-select.min.css" integrity="sha384-2SvkxRa9G/GlZMyFexHk+WN9p0n2T+r38dvBmw5l2/J3gjUcxs9R1GwKs0seeSh3" crossorigin="anonymous">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/js/bootstrap-select.min.js" integrity="sha384-SfMwgGnc3UiUUZF50PsPetXLqH2HSl/FmkMW/Ja3N2WaJ/fHLbCHPUsXzzrM6aet" crossorigin="anonymous"></script>
     </head>
     <body>
-        <select class="position-absolute" style="top:0;right:0;" id="langChoice" onchange="langChoose()">
+        <select id="lc" class="position-absolute" style="top:0;right:0;" data-width="fit" onchange="langChoose(this)">
             {% for l in langs %}
-            <option value='{{l.code}}' {% if l.code == lang.lang_code %}selected{% endif %}>{{l.name}}</option>
+            <option value="{{l.code}}" data-content='<span class="flag-icon flag-icon-{{l.flag}}"></span> {{l.name}}'{% if l.code == lang.lang_code %} selected{% endif %}>{{l.name}}</option>
             {% endfor %}
         </select>
         {% block content %}{% endblock content %}
+        <script>
+        $(function(){
+            $('#lc').selectpicker();
+            $('.dropdown').css('right', '1em');
+        });
+        </script>
     </body>
 </html>

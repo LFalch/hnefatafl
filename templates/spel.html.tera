@@ -5,7 +5,7 @@
 <link rel="stylesheet" type="text/css" href="/static/spel.css">
 {% endblock head %}
 {% block langChooseHandling %}
-const choice = document.getElementById('langChoice').value;
+const choice = select.value;
 document.cookie = `lang=${choice}`;
 document.documentElement.lang = choice;
 loadStrings();

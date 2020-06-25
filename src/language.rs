@@ -84,6 +84,7 @@ fn path(code: &str) -> Option<PathBuf> {
 #[derive(Debug, Clone, Serialize)]
 pub struct LangIcon {
     code: String,
+    flag: String,
     name: String
 }
 
@@ -96,6 +97,7 @@ pub fn langs(lc: &mut LanguageCache) -> Vec<LangIcon> {
             let lang = lc.get(&code)?;
             Some(LangIcon {
                 code,
+                flag: lang.flag_code,
                 name: lang.display_name,
             })
         })
@@ -130,6 +132,7 @@ impl FromRequest<'_, '_> for Language {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Language {
     pub lang_code: String,
+    pub flag_code: String,
     pub display_name: String,
     pub cookie_accept: String,
     pub index_title: String,
