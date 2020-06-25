@@ -1,0 +1,58 @@
+{
+    "lang_code": "da",
+    "flag_code": "dk",
+    "display_name": "Dansk",
+    "cookie_accept": "For at huske dit valg av sprog benytter denne side cookies. Er det okay med dig?",
+    "index_title": "Nævetavl",
+    "welcome": "Velkommen til denne side til at spill hnefatafl.",
+    "new_game": "Lav et nyt spil",
+    "or_join": "Eller slut dig til en vens spil",
+    "game_code": "Spilkode",
+    "join": "Tilslut dig",
+    "not_found_title": "Ikke fundet",
+    "the_page_was_not_found": "Siden $PATH kunne ikke findes.",
+    "game_title": "Spil",
+    "special_thanks": "Særlig tak til Andrew og Eiliv.",
+    "write_to_opponent_here": "Skriv en besked til din modstander her...",
+    "rules": {
+        "rules": "Regler",
+        "intro": "Spillet går ud på at tage kongen til fange for angrebet. Kongens hird kæmper mod angriberene, som er i overtal og kongen skal flygte. Angriberene har vundet, hvis kongen er alene med kun angribere omkring sig. Kongen og hirden har vundet, hvis kongen formår at flygte til én af de 4 borge i hvert hjørne af brættet.",
+        "placing_pieces_header": "Opsætning af brikkerne",
+        "placing_pieces": "De 13 forsvarere (her gule brikker) - kongen og hans 12 hirdmænd sættes på de markede felter på midten af brættet med kongen midterst (kongsborgen). De 24 angribere (her røde brikker) sættes på de markede felter i hver af de fire sider.",
+        "moving_pieces_header": "Flytning af brikkerne (træk)",
+        "moving_pieces": "Angriberene tager altid det første træk. Spillet fortsætter så skiftende mellem de to parter. Alle angribere og hirdmænd flyttes på samme måde: En brik kan flyttes et eller flere felter i hver retning til et ledigt felt (ligesom tårnet i skak), men ikke diagonalt. Det er ikke tilladt at hoppe henover andre brikker. Kun kongen kan stå på feltet i midten (kongsborgen), men andre brikker kan frit hoppe over, hvis man vil. Der er heller ikke nogen andre end kongen, som kan være på hjørnefelterne (de fire borge, som kongen kan flygte til).",
+        "taking_pieces_header": "Slag af brikker",
+        "taking_pieces": "En soldat (angriber eller hirdmand) slås ud, når den har en modstander på den ene side og får én på anden side (se tegningen). Brikken tages derefter fra brættet. Derimod slås en soldat ikke ud, hvis han selv flytter sig ind på et lignende felt mellem to modstandere. En soldat slås også ud, hvis han har én af hjørneborgene på én sida og får en motstander på den anden (se tegningen). Kongen kan også selv være med til at slå angribere ud på samme måde som hans hird, men kan ikke selv slås ud.",
+        "hirdmann_killed_header": "Soldat slås ud:",
+        "hirdmann_killed": "Hirdmanden bliver dræbt, når én af angriberene flyttes som pilene viser.",
+        "aatakar_killed_header": "Soldat slås ud:",
+        "aatakar_killed": "Angriberen bliver dræbt, når han står med «ryggen mod» kongsborgen og hirdmanden flyttes til feltet på modsatte side.",
+        "who_wins_header": "Hvem vinder",
+        "who_wins": "Kongen vinder, hvis han formår at flygte til én af sine hjørneborge. Han har tabt, hvis han lukkes inde imellem kun angribere og ikke kan flytte på sig (se tegningen). Han har også tabt, hvis han er lukket inde med «ryggen mod sin egen borg» i midten av brættet og med angribere på de tre andre sider.",
+        "king_killed_header": "Kongen fanges:",
+        "king_killed": "Kongen er fanget, når han har angribere på alle sider og ikkee kan slippe væk."
+    },
+    "game": {
+        "close_error": "Noget gik måske galt. Forbindelse afbrudt:",
+        "end": {
+            "true": "Kongen blev besejret",
+            "false": "Kongen slap væk"
+        },
+        "code": "Giv din ven denne kode, så kan de kan være med:",
+        "host_success": "Tilsluttet.",
+        "join_fail": "Serveren gav et galt svar. Jeg ventede sessionskoden $CODE, men fik ",
+        "join_success": "Forbundet til sessionen.",
+        "your_turn": "Det er din tur igen.",
+        "opponents_turn": "Det er din modstanders tur.",
+        "game_start": "Spillet er nu i gang",
+        "game_start2": {
+            "true": " og du starter.",
+            "false": " men det er ikke dig, der starter."
+        },
+        "game_win": "Til lykke; du vandt!",
+        "game_lose": "Bedre held næste gang; du tabte :(",
+        "team_aatak": "Angreb",
+        "team_hirdi": "Hirden",
+        "unknown": "Ukendt"
+    }
+}
