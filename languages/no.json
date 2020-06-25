@@ -1,17 +1,17 @@
 {
     "lang_code": "no",
     "display_name": "Norsk",
-    "cookie_accept": "For å hugsa valet ditt av mål brukar denna sida \"cookies\". Er dette greidt?",
+    "cookie_accept": "For å hugsa valet ditt av mål nyttar denna sida \"cookies\". Er dette greidt?",
     "index_title": "Nevetavl",
-    "welcome": "Velkomen hit til denna sida til å spela Hnefatafl.",
+    "welcome": "Velkomen til denna sida for å spela nevetavl.",
     "new_game": "Lag eit nytt spel",
-    "or_join": "Eller vert med på spelet hjå ein ven",
-    "game_code": "Spel-kode",
+    "or_join": "Eller vert med i spelet hjå ein ven",
+    "game_code": "Spelkode",
     "join": "Vert med",
     "not_found_title": "Ikkje funne",
-    "the_page_was_not_found": "Sida $PATH vart ikkje funne.",
+    "the_page_was_not_found": "Sida $PATH vart ikkje funni.",
     "game_title": "Spel",
-    "special_thanks": "Særleg takk til Andrew og Eiliv.",
+    "special_thanks": "Serleg takk til Andrew og Eiliv.",
     "write_to_opponent_here": "Skriv ei melding til motstandaren din her...",
     "rules": {
         "rules": "Reglar",
@@ -32,14 +32,14 @@
         "king_killed": "Kongen er teken nær han hev åtakarar på alle sidor og ikkje kann sleppa undan."
     },
     "game": {
-        "close_error": "Noko gjekk kanskje gale. Koppla av:",
+        "close_error": "Noko gjekk kannskje gale. Kopla av:",
         "end": {
             "true": "Kongen vart slegen",
             "false": "Kongen slapp undan"
         },
-        "code": "Gjev venen din denna koda so dei kann verta med:",
+        "code": "Gjev venen din denna koden so dei kann verta med:",
         "host_success": "Kopla til.",
-        "join_fail": "Tenar gav feil svar. Eg venta sessionskoda $CODE, men fekk ",
+        "join_fail": "Tenar gav feil svar. Eg venta sessionskoden $CODE, men fekk ",
         "join_success": "Kopla til runde.",
         "your_turn": "Det er turen din att.",
         "opponents_turn": "Det er turen til monstandaren.",
@@ -48,8 +48,8 @@
             "true": " og du kann byrja.",
             "false": ", men det er ikkje du som byrjar."
         },
-        "game_win": "Til lukke; du hev vunne!",
-        "game_lose": "Betre hell neste gong; du tapte :(",
+        "game_win": "Til lukka; du hev vunne!",
+        "game_lose": "Betre lukka neste gong; du tapa :(",
         "team_aatak": "Åtak",
         "team_hirdi": "Hirdi",
         "unknown": "Ukjend"
