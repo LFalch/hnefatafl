@@ -30,7 +30,7 @@
         "who_wins_header": "Who wins",
         "who_wins": "The King wins if he manages to escape to one of the Castles in the corners. The King has lost if he is closed in between only Attackers and cannot move (see picture). He has also lost if he is closed in with \"his back against his own Castle\" in the middle of the board with Attackers on the three other sides.",
         "king_killed_header": "The king is slain:",
-        "king_killed": "The is slain when he has only Attackers on all sides and cannot get aways."
+        "king_killed": "The king is slain when he has only Attackers on all sides and cannot get aways."
     },
     "game": {
         "close_error": "Something might've gone wrong. Disconnected:",
