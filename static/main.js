@@ -16,7 +16,7 @@ const onReloadStrings = function() {
     }
 }
 
-function loadStrings() {
+{
     const httpReq = new XMLHttpRequest();
     const lang = document.documentElement.lang;
     httpReq.open("GET", `/strings/${lang}.json`, true);
@@ -28,9 +28,7 @@ function loadStrings() {
         onReloadStrings();
     }
     httpReq.send(null);
-};
-
-loadStrings();
+}
 
 function texture(name) {
     if (!texes[name]) {

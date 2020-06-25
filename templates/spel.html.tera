@@ -8,7 +8,6 @@
 const choice = select.value;
 document.cookie = `lang=${choice}`;
 document.documentElement.lang = choice;
-loadStrings();
 
 const httpReq = new XMLHttpRequest();
 const lang = document.documentElement.lang;
@@ -21,6 +20,8 @@ httpReq.onreadystatechange = function () {
         document.getElementById('inputChat').placeholder = lang.write_to_opponent_here;
         document.getElementsByTagName('h1')[0].innerHTML = lang.game_title;
         document.title = `${lang.game_title} - Hnefatafl`;
+
+        strings = lang.game;
     }
     
     onReloadStrings();
