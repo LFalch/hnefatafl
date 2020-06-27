@@ -30,7 +30,7 @@
         "who_wins_header": "Hvem vinder",
         "who_wins": "Kongen vinder, hvis han formår at flygte til én af sine hjørneborge. Han har tabt, hvis han lukkes inde imellem kun angribere og ikke kan flytte på sig (se tegningen). Han har også tabt, hvis han er lukket inde med «ryggen mod sin egen borg» i midten av brættet og med angribere på de tre andre sider.",
         "king_killed_header": "Kongen fanges:",
-        "king_killed": "Kongen er fanget, når han har angribere på alle sider og ikkee kan slippe væk."
+        "king_killed": "Kongen er fanget, når han har angribere på alle sider og ikke kan slippe væk."
     },
     "game": {
         "close_error": "Noget gik måske galt. Forbindelse afbrudt:",
