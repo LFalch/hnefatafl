@@ -137,7 +137,7 @@ fn not_found(req: &Request) -> Template {
 #[inline]
 fn rocket() -> rocket::Rocket {
     rocket::ignite()
-        .mount("/", StaticFiles::from("static"))
+        .mount("/static/", StaticFiles::from("static"))
         .mount(
             "/",
             routes![
