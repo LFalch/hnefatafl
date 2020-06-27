@@ -12,7 +12,7 @@ use rocket::{
 use rocket_contrib::templates::Template;
 use rocket_contrib::{json::Json, serve::{StaticFiles}};
 use std::convert::From;
-use std::thread;
+use std::thread::Builder;
 
 mod language;
 
@@ -134,9 +134,9 @@ fn main() {
 
     let run_wss = wss.clone();
 
-    thread::spawn(move || {
+    Builder::new().name("websocket_server".to_owned()).spawn(move || {
         run_wss.run();
-    });
+    }).unwrap();
 
     rocket().manage(wss).launch();
 }
