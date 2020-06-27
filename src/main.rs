@@ -4,6 +4,7 @@
 #[macro_use] extern crate serde_derive;
 
 use rocket::{
+    http::Status,
     response::{NamedFile, Redirect},
     request::{FromRequest, Outcome},
     State,
@@ -88,6 +89,30 @@ fn favicon() -> std::io::Result<NamedFile> {
     NamedFile::open("static/favicon.ico")
 }
 
+#[derive(Debug, Serialize)]
+struct Addr {
+    ip: String,
+}
+
+impl FromRequest<'_, '_> for Addr {
+    type Error = ();
+    fn from_request(request: &Request) -> Outcome<Self, Self::Error> {
+        match request.client_ip() {
+            Some(ip) => Outcome::Success(Addr {ip: format!("{}", ip)}),
+            None => Outcome::Failure((Status::BadRequest, ()))
+        }
+    }
+}
+
+#[get("/ip")]
+fn ip(ip: Addr) -> String {
+    ip.ip
+}
+#[get("/ip.json")]
+fn ip_json(ip: Addr) -> Json<Addr> {
+    Json(ip)
+}
+
 #[catch(404)]
 fn not_found(req: &Request) -> Template {
     #[derive(Serialize)]
@@ -118,6 +143,8 @@ fn rocket() -> rocket::Rocket {
                 overview,
                 strings,
                 lang,
+                ip,
+                ip_json,
             ],
         )
         .attach(Template::fairing())
