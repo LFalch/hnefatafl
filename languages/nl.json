@@ -1,0 +1,58 @@
+{
+    "lang_code": "nl",
+    "flag_code": "nl",
+    "display_name": "Nederlands",
+    "cookie_accept": "Om je taalkeuze te herinneren gebruikt deze pagina cookies. Ben je het eens met het gebruik van cookies?",
+    "index_title": "Hnefatafl",
+    "welcome": "Welkom bij deze site om Hnefatafl te spelen.",
+    "new_game": "Maak nieuw spel",
+    "or_join": "Of neem deel van het spel met een vriend",
+    "game_code": "Spelsleutel",
+    "join": "Aansluiten",
+    "not_found_title": "Niet gevonden",
+    "the_page_was_not_found": "Pagina $PATH was niet gevonden.",
+    "game_title": "Spel",
+    "special_thanks": "Veel dank aan Andrew en Eiliv.",
+    "write_to_opponent_here": "Schrijf berichten naar jouw tegenstander hier...",
+    "rules": {
+        "rules": "Regels",
+        "intro": "Het punt van het spel is om de koning te vangen. De verdedigers van de koning strijden tegen de aanvallers die in aantal overtreffen, dus de koning moet vluchten. De aanvallers hebben gewonnen wanneer zij hebben de koning alleen omringd. De verdedigers en koning hebben gewonnen wanneer de koning aan een van hem burchten (één van de hoeken aan de boord) is gevlucht.",
+        "placing_pieces_header": "Stukken plaatsen",
+        "placing_pieces": "De 13 witte stukken (de koning en de 12 verdedigers aan hem) worden aan de gemerkte balken geplaatst rondom de koning in het midden (de koningsburcht). De 24 zwarte stukken (aanvallers) worden aan de vier gemerkte kanten geplaatst.",
+        "moving_pieces_header": "Stukken verplaatsen (beurten)",
+        "moving_pieces": "De aanval krijgt altijd de eerste beurt. De spelletje ruilt dus tussen de twee parten tot iemand heeft gewonnen. Alle stukken mogen op dezelfde manier verplaatsen: Één stuk mag op alle vier richtingen bewegen, hoewel niet boven andere stukken noch scheef (zoals de toren in schak). Alleen de koning mag op het midden staan, toch andere stukken mogen graag boven gaan. Er is ook alleen de koning die op de hoekbalken mag staan (de vier burchten).",
+        "taking_pieces_header": "Stukken nemen",
+        "taking_pieces": "Een soldaat (aanvaller of verdediger) is gestorven wanneer hij een tegenstander op een kant heeft en een meer op de andere kant krijg (zie de afbeelding). De stuk gaat dan vanaf de boord. De soldaat gaat niet dood als hij naar een gelijkende balk tussen twee tegenstanders gaat. Een soldaat wordt ook geslagen als hij een tegenstander op een kant heeft, en een burcht op de ander (zie afbeelding). De koning mag hijzelf aanvallers slaan zoals zijn verdedigers, maar kan niet zelf worden geslagen.",
+        "hirdmann_killed_header": "Verdedigende soldaat is gestorven:",
+        "hirdmann_killed": "De verdediger is gestorven wanneer één van de aanvallers zoals de pijlen wijzen wordt verplaatst.",
+        "aatakar_killed_header": "Aanvallende soldaat is gestorven:",
+        "aatakar_killed": "De aanvaller is gestorven wanneer hij met \"zijn rug tegen\" de koningsburcht staan, en als een verdedigende soldaat achter de aanvaller zijn andere kant word verplaatst.",
+        "who_wins_header": "Wie winnen",
+        "who_wins": "De koning wint wanneer hij aan één van hem burchten kunt vluchten. De aanvallers hebben gewonnen zodra zij de koning omringd hebben, en mag niet meer zich bewegen (zie afbeelding). De koning heeft ook verloren als hij tussen drie aanvallers omringd wordt en met \"zijn rug tegen de kastel\" in het midden staan.",
+        "king_killed_header": "De koning is gestorven:",
+        "king_killed": "De koning is gestorven wanneer hij vijanden op alle kanten heeft en niet meer ontvluchten kunt."
+    },
+    "game": {
+        "close_error": "Er is iets fout gegaan. Ontkoppeld:",
+        "end": {
+            "true": "De koning werd geslagen",
+            "false": "De koning ontvluchtte"
+        },
+        "code": "Geef je vriend deze code als zij deelnemen kunnen:",
+        "host_success": "Verbonden.",
+        "join_fail": "De server gaaf een onjuist antwoord. Ik verwachtte de code $CODE, maar kreeg ",
+        "join_success": "Nam deel aan ronde.",
+        "your_turn": "Het is jouw keer.",
+        "opponents_turn": "Het is jouw tegenstander zijn beurt.",
+        "game_start": "Het spel is begonnen",
+        "game_start2": {
+            "true": " en je ben aan het starten.",
+            "false": ", maar je start het niet."
+        },
+        "game_win": "Gefeliciteerd; je hebt gewonnen!",
+        "game_lose": "Volgende keer beter; je hebt verloren :(",
+        "team_aatak": "Aanvaller",
+        "team_hirdi": "Verdediger",
+        "unknown": "Onbekend"
+    }
+}
