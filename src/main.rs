@@ -112,6 +112,12 @@ fn ip(ip: Addr) -> String {
 fn ip_json(ip: Addr) -> Json<Addr> {
     Json(ip)
 }
+#[get("/robots.txt")]
+fn robots() -> &'static str {
+r"User-agent: *
+Disallow: /
+"
+}
 
 #[catch(404)]
 fn not_found(req: &Request) -> Template {
