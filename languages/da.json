@@ -2,7 +2,7 @@
     "lang_code": "da",
     "flag_code": "dk",
     "display_name": "Dansk",
-    "cookie_accept": "For at huske dit valg av sprog benytter denne side cookies. Er det okay med dig?",
+    "cookie_accept": "For at huske dit valg af sprog benytter denne side cookies. Er det okay med dig?",
     "index_title": "Nævetavl",
     "welcome": "Velkommen til denne side til at spille hnefatafl.",
     "new_game": "Lav et nyt spil",
@@ -28,7 +28,7 @@
         "aatakar_killed_header": "Soldat slås ud:",
         "aatakar_killed": "Angriberen bliver dræbt, når han står med «ryggen mod» kongsborgen og hirdmanden flyttes til feltet på modsatte side.",
         "who_wins_header": "Hvem vinder",
-        "who_wins": "Kongen vinder, hvis han formår at flygte til én af sine hjørneborge. Han har tabt, hvis han lukkes inde imellem kun angribere og ikke kan flytte på sig (se tegningen). Han har også tabt, hvis han er lukket inde med «ryggen mod sin egen borg» i midten av brættet og med angribere på de tre andre sider.",
+        "who_wins": "Kongen vinder, hvis han formår at flygte til én af sine hjørneborge. Han har tabt, hvis han lukkes inde imellem kun angribere og ikke kan flytte på sig (se tegningen). Han har også tabt, hvis han er lukket inde med «ryggen mod sin egen borg» i midten af brættet og med angribere på de tre andre sider.",
         "king_killed_header": "Kongen fanges:",
         "king_killed": "Kongen er fanget, når han har angribere på alle sider og ikke kan slippe væk."
     },
