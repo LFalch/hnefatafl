@@ -11,6 +11,7 @@ use std::str::FromStr;
 use std::fmt::{self, Display};
 use std::net::TcpStream;
 use std::io::ErrorKind as IoErrorKind;
+use std::time::{Instant, Duration};
 
 use rand::{Rng, thread_rng};
 
@@ -52,6 +53,15 @@ impl Session {
             aatak: None,
             game,
         }
+    }
+    fn ping(&mut self) -> WebSocketResult<()> {
+        let ping_msg = OwnedMessage::Ping(vec![b'P', b'I', b'n', b'G']);
+
+        self.hirdi.1.send_message(&ping_msg)?;
+        if let Some(Player(_, a_sender)) = &mut self.aatak {
+            a_sender.send_message(&ping_msg)?;
+        }
+        Ok(())
     }
     fn handle(&mut self) -> WebSocketResult<()> {
         let Player(h_reader, h_sender) = &mut self.hirdi;
@@ -505,6 +515,8 @@ impl WebSocketServer {
 
         {
             let games = games.clone();
+            let mut last_ping_time = Instant::now();
+
             Builder::new().name("running games handler".to_owned()).spawn(move || {
                 loop {
                     {
@@ -512,7 +524,20 @@ impl WebSocketServer {
 
                         let mut deads = Vec::new();
 
+                        const PING_DELAY: Duration = Duration::from_secs(5);
+
+                        let now = Instant::now();
+
+                        let ping = now - last_ping_time >= PING_DELAY;
+                        if ping {
+                            last_ping_time = now;
+                        }
+
                         for (code, session) in games_lock.iter_mut() {
+                            if ping {
+                                let _ = session.ping();
+                            }
+
                             match session.handle() {
                                 Ok(()) => (),
                                 Err(WebSocketError::ProtocolError(s)) => eprintln!("Protocol error: {}", s),
