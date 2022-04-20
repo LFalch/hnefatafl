@@ -4,7 +4,7 @@ let app = new PIXI.Application({ width: 600, height: 600 });
 document.getElementById('game').appendChild(app.view);
 app.stage.interactive = true;
 
-PIXI.Loader.shared.add("static/konge.png").add("static/hirdmann.png").add("static/aatakar.png").add("static/brett.png").add("static/brett_stor.png").add("static/valid_move.png").load(setup);
+PIXI.Loader.shared.add("static/konge.png").add("static/hirdmann.png").add("static/aatakar.png").add("static/brett.png").add("static/brett_stor.png").add("static/valid_move.png").add("static/arrow.png").load(setup);
 
 let texes = {};
 let strings = {};
@@ -269,6 +269,15 @@ function mkGmLoop(logic) {
 let pickedUp = null;
 let started = false;
 let aatak;
+let arrow = [];
+
+function newArrow(x, y) {
+    const arrow = new PIXI.Sprite(texture('arrow'));
+    arrow.position = toReal(x, y);
+    app.stage.addChild(arrow);
+    console.log(arrow);
+    return arrow;
+}
 
 function onClose(event) {
     msgBox(null, `${strings.close_error} ${event.reason}`, 'error');
@@ -327,6 +336,23 @@ function onMessage(event) {
 
         const msg = board.aatakTur == aatak ? strings.your_turn : strings.opponents_turn; 
         msgBox(null, msg, "info");
+
+        arrow.forEach(spr => app.stage.removeChild(spr));
+        arrow = [newArrow(x, y)];
+        let xx = x, yy = y;
+        let ddx = dx, ddy = dy;
+        while (ddx != 0 || ddy != 0) {
+            if (ddx == 0) {
+                const dd = ddy / Math.abs(ddy);
+                yy += dd;
+                ddy -= dd;
+            } else {
+                const dd = ddx / Math.abs(ddx);
+                xx += dd;
+                ddx -= dd;
+            }
+            arrow.push(newArrow(xx, yy));
+        }
     } else if (!started && event.data.startsWith('START')) {
         started = true;
         app.renderer.plugins.interaction.on('pointerdown', onDown);
