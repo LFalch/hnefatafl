@@ -4,7 +4,7 @@ let app = new PIXI.Application({ width: 600, height: 600 });
 document.getElementById('game').appendChild(app.view);
 app.stage.interactive = true;
 
-PIXI.Loader.shared.add("static/konge.png").add("static/hirdmann.png").add("static/aatakar.png").add("static/brett.png").add("static/brett_stor.png").load(setup);
+PIXI.Loader.shared.add("static/konge.png").add("static/hirdmann.png").add("static/aatakar.png").add("static/brett.png").add("static/brett_stor.png").add("static/valid_move.png").load(setup);
 
 let texes = {};
 let strings = {};
@@ -60,8 +60,11 @@ Piece.prototype.move = function(dx, dy) {
 Piece.prototype.at = function(x, y) {
     return this.x == x && this.y == y;
 }
+function toReal(x, y) {
+    return { x: 11 + x * 40, y: 11 + y * 40 };
+}
 Piece.prototype.toReal = function() {
-    return {x: 11 + this.x * 40, y: 11 + this.y * 40};
+    return toReal(this.x, this.y);
 }
 function fromReal(x, y) {
     return {x: Math.floor((x - 11)/40), y: Math.floor((y - 11)/40)}
@@ -132,6 +135,7 @@ function Board(stor) {
     const last = dimensions-1;
     const mid = Math.floor(dimensions / 2);
 
+    this.dims = dimensions;
     this.konge = new Piece(mid, mid, texture('konge'));
     this.aatakarar = [];
     this.hirdmenn = [];
@@ -339,10 +343,61 @@ function onMessage(event) {
         msgBox(sender_name, msg);
     } else if (event.data.startsWith('WIN')) {
         msgBox(null, `${strings.end[aatak]}. ${strings.game_win}`);
-    } else if (event.data.startsWith('LOSE')) {
         msgBox(null, `${strings.end[!aatak]}. ${strings.game_lose}`);
     }
 }
+function isValid(x, y) {
+    const mid = Math.floor(board.dims / 2);
+    if ((x == mid && y == mid) || ((x == 0 || x == board.dims - 1) && (y == 0 || y == board.dims - 1))) {
+        return [false, true];
+    } else if (board.find(x, y, true) == null) {
+        return [true, true];
+    } else {
+        return [false, false];
+    }
+}
+
+function findValidMovesFrom(piece) {
+    let validMoves = [];
+
+    {
+        const y = piece.y;
+        for (let x = piece.x - 1; x >= 0; x--) {
+            const [valid, dontBreak] = isValid(x, y);
+            if (valid) {
+                validMoves.push([x, y]);
+            }
+            if (!dontBreak) break;
+        }
+        for (let x = piece.x + 1; x < board.dims; x++) {
+            const [valid, dontBreak] = isValid(x, y);
+            if (valid) {
+                validMoves.push([x, y]);
+            }
+            if (!dontBreak) break;
+        }
+    }
+    {
+        const x = piece.x;
+        for (let y = piece.y - 1; y >= 0; y--) {
+            const [valid, dontBreak] = isValid(x, y);
+            if (valid) {
+                validMoves.push([x, y]);
+            }
+            if (!dontBreak) break;
+        }
+        for (let y = piece.y + 1; y < board.dims; y++) {
+            const [valid, dontBreak] = isValid(x, y);
+            if (valid) {
+                validMoves.push([x, y]);
+            }
+            if (!dontBreak) break;
+        }
+    }
+
+    return validMoves;
+}
+
 function onDown(event) {
     if (aatak != board.aatakTur) {
         return
@@ -352,11 +407,23 @@ function onDown(event) {
 
     if (piece != null) {
         if (pickedUp != null) {
-            app.stage.removeChild(pickedUp.sprite);
+            pickedUp.cleanup();
         }
         pickedUp = new Piece(piece.x, piece.y, piece.sprite.texture);
+        pickedUp.cleanup = function() {
+            app.stage.removeChild(this.sprite);
+            this.validMoves.forEach(spr => app.stage.removeChild(spr));
+        };
         pickedUp.sprite.alpha = 0.56;
         pickedUp.orig = {x: piece.x, y: piece.y};
+        
+        pickedUp.validMoves = [];
+        for (const [x, y] of findValidMovesFrom(piece)) {
+            const validMove = new PIXI.Sprite(texture('valid_move'));
+            validMove.position = toReal(x, y);
+            app.stage.addChild(validMove);
+            pickedUp.validMoves.push(validMove);
+        }
     }
 }
 function onMove(event) {
@@ -370,7 +437,7 @@ function onMove(event) {
 function onUp(event) {
     onMove(event)
     if (pickedUp != null) {
-        app.stage.removeChild(pickedUp.sprite);
+        pickedUp.cleanup();
 
         const dx = pickedUp.x - pickedUp.orig.x;
         const dy = pickedUp.y - pickedUp.orig.y;
