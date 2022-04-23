@@ -38,9 +38,9 @@
             "true": "Kongurin varð tikin til fanga",
             "false": "Kongurin kom undan"
         },
-        "code": "Gev tín vin hetta loynitalið fyri at bjóða til spælið:",
+        "code": "Gev tínum vini hetta loynitalið fyri at bjóða til spælið:",
         "host_success": "Fekk samband.",
-        "join_fail": "Servarin gav skeivt svar. Eg væntaði loynitalið $CODE, men fekk ",
+        "join_fail": "Servarin sendi skeivt svar. Eg væntaði loynitalið $CODE, men fekk ",
         "join_success": "Fekk samband við setuni.",
         "your_turn": "Tú eigur tørn.",
         "opponents_turn": "Mótleikarin eigur tørn.",
