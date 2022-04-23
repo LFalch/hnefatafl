@@ -1,0 +1,58 @@
+{
+    "lang_code": "fo",
+    "flag_code": "fo",
+    "display_name": "Føroyskt",
+    "cookie_accept": "Fyri at minnast tað málið tú hevur valt, nýtir henda síðan kennifílur (cookies). Er hetta í lagi?",
+    "index_title": "Nevatalv",
+    "welcome": "Vælkomin til hesa síðuna. Her kanst tú spæla nevatalv.",
+    "new_game": "Ger nýtt spæl",
+    "or_join": "Ella far upp í eitt spæl hjá einum vini",
+    "game_code": "Loynital",
+    "join": "Kom uppí",
+    "not_found_title": "Ei funnið",
+    "the_page_was_not_found": "Síðan $PATH varð ikki funnin.",
+    "game_title": "Spæl",
+    "special_thanks": "Eina serliga tøkk til Andrew og Eilívs.",
+    "write_to_opponent_here": "Send eitt boð til mótleikaran her ...",
+    "rules": {
+        "rules": "Reglur",
+        "intro": "Fyri álopið snýr spælið seg um at taka kongin til fanga. Hirðin kongsins stríðist ímóti álopinum, sum er í meiriluta, og kongurin má flýggja. Álopið hevur vunnið, um kongurin er einsamallur við bert áleyparum um seg. Kongurin og hirðin hava vunnið, um kongurin megnar at flýggja til eina teimum fýra borgunum hjá sær (ein í hvørjum horn av talvborðinum).",
+        "placing_pieces_header": "Uppseting av talvfólkunum",
+        "placing_pieces": "Tey 13 \"hvítu\" fólkini (kongurin og hansara 12 hirðmenn) verða sett út á teir merktar puntarnar mitt á borðinum við konginum í miðjuni (kongsborgin). Tey 24 \"svørtu\" fólkini (álopið) verða sett út á teir merktar puntarnar á hvørjari av teimum fýra síðunum av borðinum.",
+        "moving_pieces_header": "Leikir av fólkunum (gongulag og tørn)",
+        "moving_pieces": "Álopið eigur altíð fyrsta tørn. Spælið heldur so fram til skiftis millum teir báðar patarnar. Øll fólkið verða leikt á sama hátt: Eitt fólk kann verða leikt til allar síður ein ella fleire puntar til ein tøkan punt (líkasum rókurin í talvi) og aldrin á skák. Loyvt er ikki at hoppa yvir øðrum fólkum. Bert kongurin kann standa á puntinum í miðjuni (kongsborgi), men onnur kunnu frítt hoppa yvir borgini, um ynskt er. Heldur ikki kunnu onnur enn kongurin ganga í hornapuntarnar (borgirnar har sum kongurin má flýggja).",
+        "taking_pieces_header": "At taka fólk",
+        "taking_pieces": "Ein hermaður (bæði álopið og hirðin) verður sligin tá ið hann hevur ein mótleikara á einari síðu og fær ein aftrat á hina (hygg at myndini). Fólkið verður so tikið burtur frá borðinum. Tó verður ikki hermaðurin sligin, um hann sjálvur fer inn á ein líknandi punt millum tveir mótleikarar. Ein hermaður verður eisini sligin, um hann hevur eina av hornaborgunum á einari síðu og fær ein mótleikara á hina (hygg at myndini). Kongurin kann eisini luttuka í at taka álopsmenn akkurát sum hirðmenninir, men kann ikki sjálvur verður sligin.",
+        "hirdmann_killed_header": "Hirðmaður verður sligin:",
+        "hirdmann_killed": "Hirðmaðurin verður sligin tá ið ein álopsmaður verður fluttur sum ørvarnir vísa.",
+        "aatakar_killed_header": "Álopsmaður verður sligin:",
+        "aatakar_killed": "Álopsmaðurin verður sligini tá ið hann stendur við \"rygginum\" móti kongsborgini og ein hirðmaður verður fluttur til puntin á hina síðu.",
+        "who_wins_header": "Hvør vinnur",
+        "who_wins": "Kongurin vinnur um hann megnar at flýggja til eina av borgunum hjá sær (hornapuntarnar). Hann hevur tapt, um hann verður stongdur inni millum fýra álopsmenn og ikki kann verða leikt burtur (hygg at myndini). Han hevur eisini tapt, um hann er stongdur inni við \"rygginum ímóti síni borgini\" í miðjuni av borðinum og við álopsmonnum á trimum siðum.",
+        "king_killed_header": "Kongurin verður fangaður:",
+        "king_killed": "Kongurin er fangaður, tá ið hann hevur álopsmenn á øllum síðum og ikki kann sleppa undan."
+    },
+    "game": {
+        "close_error": "Okkurt gekk galið. Samband mist:",
+        "end": {
+            "true": "Kongurin varð tikin til fanga",
+            "false": "Kongurin kom undan"
+        },
+        "code": "Gev tín vin hetta loynitalið fyri at bjóða til spælið:",
+        "host_success": "Fekk samband.",
+        "join_fail": "Servarin gav skeivt svar. Eg væntaði loynitalið $CODE, men fekk ",
+        "join_success": "Fekk samband við setuni.",
+        "your_turn": "Tú eigur tørn.",
+        "opponents_turn": "Mótleikarin eigur tørn.",
+        "game_start": "Spælið er nú ígongd",
+        "game_start2": {
+            "true": " og tú byrjar.",
+            "false": ", men tað er ikki tú ið byrjar."
+        },
+        "game_win": "Til lukku; du vanst!",
+        "game_lose": "Betri eydnu næstu ferð; tú tapti :(",
+        "team_aatak": "Álop",
+        "team_hirdi": "Hirðin",
+        "unknown": "Ókent"
+    }
+}
