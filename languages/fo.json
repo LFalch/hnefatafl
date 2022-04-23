@@ -49,7 +49,7 @@
             "true": " og tú byrjar.",
             "false": ", men tað er ikki tú ið byrjar."
         },
-        "game_win": "Til lukku; du vanst!",
+        "game_win": "Til lukku; tú vanst!",
         "game_lose": "Betri eydnu næstu ferð; tú tapti :(",
         "team_aatak": "Álop",
         "team_hirdi": "Hirðin",
