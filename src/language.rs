@@ -115,7 +115,7 @@ impl FromRequest<'_, '_> for Language {
             cookie.value()
         } else {
             for locale in AcceptLanguage::from_request(req).unwrap().accept_language {
-                let code = locale.get_language();
+                let code = locale.language.as_str();
 
                 if let Some(lang) = lc.get(code) {
                     return Outcome::Success(lang);
@@ -124,7 +124,7 @@ impl FromRequest<'_, '_> for Language {
             ""
         };
         Outcome::Success(
-            lc.get(code).unwrap_or_else(|| lc.get("no").unwrap())
+            lc.get(code).unwrap_or_else(|| lc.get("da").unwrap())
         )
     }
 }
