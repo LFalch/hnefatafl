@@ -2,7 +2,7 @@
 name = "hnefatafl"
 version = "0.1.0"
 authors = ["LFalch <lucas@wasd.dk>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 rocket = "0.4.10"
