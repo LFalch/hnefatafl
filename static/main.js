@@ -275,7 +275,6 @@ function newArrow(x, y) {
     const arrow = new PIXI.Sprite(texture('arrow'));
     arrow.position = toReal(x, y);
     app.stage.addChild(arrow);
-    console.log(arrow);
     return arrow;
 }
 
@@ -294,6 +293,7 @@ onReloadStringsCbs.push(function() {
 });
 
 function onMessage(event) {
+    console.log(event.data);
     if (event.data.startsWith('HOST_OK ')) {
         code = event.data.substr(8);
         aatak = false;
@@ -369,6 +369,7 @@ function onMessage(event) {
         msgBox(sender_name, msg);
     } else if (event.data.startsWith('WIN')) {
         msgBox(null, `${strings.end[aatak]}. ${strings.game_win}`);
+    } else if (event.data.startsWith('LOSE')) {
         msgBox(null, `${strings.end[!aatak]}. ${strings.game_lose}`);
     }
 }

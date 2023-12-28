@@ -6,7 +6,7 @@ use websocket::sender::Writer;
 
 use std::thread::{Builder, sleep};
 use std::sync::{Arc, Mutex};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
 use std::fmt::{self, Display};
 use std::net::TcpStream;
@@ -20,7 +20,7 @@ type WsWriter = Writer<TcpStream>;
 
 struct Player(WsReader, WsWriter);
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 struct Pos(i8, i8);
 
 impl Pos {
@@ -297,6 +297,30 @@ impl Game {
 
         cmds
     }
+    fn hird_surrounded(&self) -> bool {
+        // Do a BFS from each corner to any hird piece
+        let mut candidates = vec![Pos(0, 0), Pos(0, self.size-1), Pos(self.size-1, 0), Pos(self.size-1, self.size-1)];
+        let mut exhausted = HashSet::new();
+
+        loop {
+            let Some(Pos(cx, cy)) = candidates.pop() else { break true; };
+            exhausted.insert(Pos(cx, cy));
+
+            match self.find(cx, cy) {
+                Some(PieceOnBoard::Hirdmann(_) | PieceOnBoard::Konge) => break false,
+                Some(PieceOnBoard::Aatakar(_)) => (),
+                // if there was no piece, we can move there and we need to check all its neighbours
+                None => {
+                    for (nx, ny) in Pos(cx, cy).surround() {
+                        let n = Pos(nx, ny);
+                        if !(self.out_of_bounds(nx, ny) || exhausted.contains(&n)) {
+                            candidates.push(n);
+                        }
+                    }
+                }
+            }
+        }
+    }
     fn who_has_won(&self) -> Option<Team> {
         let Pos(kx, ky) = self.konge;
 
@@ -308,7 +332,7 @@ impl Game {
                 self.is_middle_castle(x, y) ||
                 self.find(x, y).map(|p| p.team()) == Some(Team::Aatak)
             });
-            if king_captured {
+            if king_captured || self.hird_surrounded() {
                 Some(Team::Aatak)
             } else {
                 None
