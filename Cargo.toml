@@ -5,11 +5,11 @@ authors = ["LFalch <lucas@wasd.dk>"]
 edition = "2021"
 
 [dependencies]
-rocket = "0.4.10"
-rocket_contrib = {version = "0.4.10", features = ["tera_templates"]}
+rocket = {version = "0.5", features = ["json"]}
+rocket_dyn_templates = { version = "0.1", features = ["tera"] }
 serde = "1"
 serde_derive = "1"
 serde_json = "1"
 rand = "0.8"
 websocket = "0.26"
-rocket-accept-language = "0.7"
+rocket-accept-language = "0.8"

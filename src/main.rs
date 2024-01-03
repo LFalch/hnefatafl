@@ -5,13 +5,14 @@
 
 use rocket::{
     http::Status,
-    response::{NamedFile, Redirect},
+    response::Redirect,
+    outcome::try_outcome,
+    fs::{NamedFile, FileServer},
     request::{FromRequest, Outcome},
     State,
-    Request,
+    Request, Build, serde::json::Json,
 };
-use rocket_contrib::templates::Template;
-use rocket_contrib::{json::Json, serve::{StaticFiles}};
+use rocket_dyn_templates::Template;
 use std::convert::From;
 use std::thread::Builder;
 
@@ -24,15 +25,16 @@ struct LangTemplate {
     langs: Vec<LangIcon>,
     lang: Language,
 }
-impl FromRequest<'_, '_> for LangTemplate {
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for LangTemplate {
     type Error = ();
-    fn from_request(req: &Request) -> Outcome<Self, Self::Error> {
+    async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         let langs = {
-            language::langs(&mut req.guard::<State<SharedLanguageCache>>()?.inner().clone().lock().unwrap())
+            language::langs(&mut try_outcome!(req.guard::<&State<SharedLanguageCache>>().await).inner().clone().lock().unwrap())
         };
         Outcome::Success(LangTemplate {
             langs,
-            lang: Language::from_request(req)?
+            lang: try_outcome!(Language::from_request(req).await)
         })
     }
 }
@@ -58,11 +60,11 @@ fn spel(lt: LangTemplate, code: Option<String>) -> Template {
     Template::render("spel", &lt)
 }
 #[get("/strings/<code>")]
-fn strings(code: String, slc: State<SharedLanguageCache>) -> Option<Json<GameStrings>> {
+fn strings(code: String, slc: &State<SharedLanguageCache>) -> Option<Json<GameStrings>> {
     lang(code, slc).map(|l| Json(l.0.game))
 }
 #[get("/lang/<code>")]
-fn lang(code: String, slc: State<SharedLanguageCache>) -> Option<Json<Language>> {
+fn lang(code: String, slc: &State<SharedLanguageCache>) -> Option<Json<Language>> {
     let dot = code.rfind('.')?;
     if &code[dot..] != ".json" {
         dbg!(code);
@@ -72,7 +74,7 @@ fn lang(code: String, slc: State<SharedLanguageCache>) -> Option<Json<Language>>
 }
 
 #[get("/overview")]
-fn overview(games: State<WebSocketServer>) -> String {
+fn overview(games: &State<WebSocketServer>) -> String {
     let games = games.inner().games.lock().unwrap();
 
     let mut s = String::new();
@@ -85,8 +87,8 @@ fn overview(games: State<WebSocketServer>) -> String {
 }
 
 #[get("/favicon.ico")]
-fn favicon() -> std::io::Result<NamedFile> {
-    NamedFile::open("static/favicon.ico")
+async fn favicon() -> std::io::Result<NamedFile> {
+    NamedFile::open("static/favicon.ico").await
 }
 
 #[derive(Debug, Serialize)]
@@ -94,12 +96,13 @@ struct Addr {
     ip: String,
 }
 
-impl FromRequest<'_, '_> for Addr {
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for Addr {
     type Error = ();
-    fn from_request(request: &Request) -> Outcome<Self, Self::Error> {
+    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         match request.client_ip() {
             Some(ip) => Outcome::Success(Addr {ip: format!("{}", ip)}),
-            None => Outcome::Failure((Status::BadRequest, ()))
+            None => Outcome::Error((Status::BadRequest, ()))
         }
     }
 }
@@ -120,7 +123,7 @@ Disallow: /
 }
 
 #[catch(404)]
-fn not_found(req: &Request) -> Template {
+async fn not_found(req: &Request<'_>) -> Template {
     #[derive(Serialize)]
     struct NotFoundTemplate<'a> {
         path: &'a str,
@@ -129,15 +132,15 @@ fn not_found(req: &Request) -> Template {
     }
 
     Template::render("error/404", &NotFoundTemplate{
-        path: req.uri().path(),
-        lang_template: LangTemplate::from_request(req).unwrap()
+        path: req.uri().path().as_str(),
+        lang_template: LangTemplate::from_request(req).await.unwrap()
     })
 }
 
 #[inline]
-fn rocket() -> rocket::Rocket {
-    rocket::ignite()
-        .mount("/static/", StaticFiles::from("static"))
+fn rocket() -> rocket::Rocket<Build> {
+    rocket::build()
+        .mount("/static/", FileServer::from("static"))
         .mount(
             "/",
             routes![
@@ -156,14 +159,15 @@ fn rocket() -> rocket::Rocket {
         )
         .attach(Template::fairing())
         .manage(new_shared_language_cache())
-        .register(catchers![not_found])
+        .register("/", catchers![not_found])
 }
 
 mod websocket_server;
 
 use websocket_server::WebSocketServer;
 
-fn main() {
+#[rocket::launch]
+fn rocket_() -> _ {
     let wss = WebSocketServer::new();
 
     let run_wss = wss.clone();
@@ -172,5 +176,6 @@ fn main() {
         run_wss.run();
     }).unwrap();
 
-    rocket().manage(wss).launch();
+    rocket()
+        .manage(wss)
 }

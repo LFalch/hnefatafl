@@ -6,8 +6,9 @@ use std::sync::{Arc, Mutex};
 
 use serde_json::from_reader;
 
-use rocket::Request;
-use rocket::request::{FromRequest, State, Outcome};
+use rocket::{Request, State};
+use rocket::request::{FromRequest, Outcome};
+use rocket::outcome::try_outcome;
 
 use rocket_accept_language::AcceptLanguage;
 
@@ -104,17 +105,19 @@ pub fn langs(lc: &mut LanguageCache) -> Vec<LangIcon> {
         .collect()
 }
 
-impl FromRequest<'_, '_> for Language {
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for Language {
     type Error = ();
-    fn from_request(req: &Request) -> Outcome<Self, Self::Error> {
-        let slc = req.guard::<State<SharedLanguageCache>>()?.inner().clone();
+    async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+        let locales = AcceptLanguage::from_request(req).await.unwrap().accept_language;
+        let slc = try_outcome!(req.guard::<&State<SharedLanguageCache>>().await).inner().clone();
         let mut lc = slc.lock().unwrap();
 
         let cookies = req.cookies();
         let code = if let Some(cookie) = cookies.get("lang") {
             cookie.value()
         } else {
-            for locale in AcceptLanguage::from_request(req).unwrap().accept_language {
+            for locale in locales {
                 let code = locale.language.as_str();
 
                 if let Some(lang) = lc.get(code) {
@@ -123,8 +126,12 @@ impl FromRequest<'_, '_> for Language {
             }
             ""
         };
+
         Outcome::Success(
-            lc.get(code).unwrap_or_else(|| lc.get("da").unwrap())
+            match lc.get(code) {
+                Some(c) => c,
+                None => lc.get("da").unwrap(),
+            }
         )
     }
 }
