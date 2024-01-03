@@ -1,5 +1,3 @@
-#![feature(proc_macro_hygiene, decl_macro)]
-
 #[macro_use] extern crate rocket;
 #[macro_use] extern crate serde_derive;
 
@@ -13,7 +11,6 @@ use rocket::{
     Request, Build, serde::json::Json,
 };
 use rocket_dyn_templates::Template;
-use std::convert::From;
 use std::thread::Builder;
 
 mod language;
