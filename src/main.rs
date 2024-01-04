@@ -52,15 +52,15 @@ fn index(lt: LangTemplate) -> Template {
 }
 #[get("/spel?<code>")]
 #[allow(unused_variables)]
-fn spel(lt: LangTemplate, code: Option<String>) -> Template {
+fn spel(lt: LangTemplate, code: Option<&str>) -> Template {
     Template::render("spel", &lt)
 }
 #[get("/strings/<code>")]
-fn strings(code: String, slc: &State<SharedLanguageCache>) -> Option<Json<GameStrings>> {
+fn strings(code: &str, slc: &State<SharedLanguageCache>) -> Option<Json<GameStrings>> {
     lang(code, slc).map(|l| Json(l.0.game))
 }
 #[get("/lang/<code>")]
-fn lang(code: String, slc: &State<SharedLanguageCache>) -> Option<Json<Language>> {
+fn lang(code: &str, slc: &State<SharedLanguageCache>) -> Option<Json<Language>> {
     let dot = code.rfind('.')?;
     if &code[dot..] != ".json" {
         dbg!(code);

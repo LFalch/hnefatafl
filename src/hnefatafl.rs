@@ -510,6 +510,10 @@ pub fn ws(ws: WebSocket, games: &State<GamesMutex>) -> Channel<'static> {
                         break;
                     }
 
+                    if session.aatak.is_none() {
+                        continue;
+                    }
+
                     match cmd {
                         Command::Chat(msg) => {
                             if !msg.is_empty() {
@@ -530,15 +534,15 @@ pub fn ws(ws: WebSocket, games: &State<GamesMutex>) -> Channel<'static> {
                         if let Some(winner) = game.who_has_won() {
                             match winner {
                                 Team::Aatak => {
+                                    let _ = session.aatak.as_ref().unwrap().send(Command::Win);
+                                    let _ = session.hirdi.send(Command::Lose);
+                                }
+                                Team::Hirdi => {
                                     let _ = session.hirdi.send(Command::Win);
                                     let _ = session.aatak.as_ref().unwrap().send(Command::Lose);
                                 }
-                                Team::Hirdi => {
-                                    let _ = session.hirdi.send(Command::Lose);
-                                    let _ = session.aatak.as_ref().unwrap().send(Command::Win);
-                                }
                             }
-                            
+
                             // Game over
                             session.game = None;
                         }
