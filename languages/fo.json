@@ -13,7 +13,7 @@
     "the_page_was_not_found": "Síðan $PATH varð ikki funnin.",
     "game_title": "Spæl",
     "special_thanks": "Eina serliga tøkk til Andrew og Eilívs.",
-    "write_to_opponent_here": "Send eitt boð til mótleikaran her ...",
+    "write_to_opponent_here": "Send eini boð til mótleikaran her ...",
     "rules": {
         "rules": "Reglur",
         "intro": "Fyri álopið snýr spælið seg um at taka kongin til fanga. Hirðin kongsins stríðist ímóti álopinum, sum er í meiriluta, og kongurin má flýggja. Álopið hevur vunnið, um kongurin er einsamallur við bert áleyparum um seg. Kongurin og hirðin hava vunnið, um kongurin megnar at flýggja til eina teimum fýra borgunum hjá sær (ein í hvørjum horn av talvborðinum).",
@@ -28,7 +28,7 @@
         "aatakar_killed_header": "Álopsmaður verður sligin:",
         "aatakar_killed": "Álopsmaðurin verður sligini tá ið hann stendur við \"rygginum\" móti kongsborgini og ein hirðmaður verður fluttur til puntin á hina síðu.",
         "who_wins_header": "Hvør vinnur",
-        "who_wins": "Kongurin vinnur um hann megnar at flýggja til eina av borgunum hjá sær (hornapuntarnar). Hann hevur tapt, um hann verður stongdur inni millum fýra álopsmenn og ikki kann verða leikt burtur (hygg at myndini). Han hevur eisini tapt, um hann er stongdur inni við \"rygginum ímóti síni borgini\" í miðjuni av borðinum og við álopsmonnum á trimum siðum.",
+        "who_wins": "Kongurin vinnur um hann megnar at flýggja til eina av borgunum hjá sær (hornapuntarnar). Hann hevur tapt, um hann verður stongdur inni millum fýra álopsmenn og ikki kann verða leikt burtur (hygg at myndini). Han hevur eisini tapt, um hann er stongdur inni við \"rygginum ímóti síni egnu borg\" í miðjuni av borðinum og við álopsmonnum á hinum trimum siðum.",
         "king_killed_header": "Kongurin verður fangaður:",
         "king_killed": "Kongurin er fangaður, tá ið hann hevur álopsmenn á øllum síðum og ikki kann sleppa undan."
     },
@@ -42,8 +42,8 @@
         "host_success": "Fekk samband.",
         "join_fail": "Servarin sendi skeivt svar. Eg væntaði loynitalið $CODE, men fekk ",
         "join_success": "Fekk samband við setuni.",
-        "your_turn": "Tú eigur tørn.",
-        "opponents_turn": "Mótleikarin eigur tørn.",
+        "your_turn": "Tú eigur leik.",
+        "opponents_turn": "Mótleikarin eigur leik.",
         "game_start": "Spælið er nú ígongd",
         "game_start2": {
             "true": " og tú byrjar.",
