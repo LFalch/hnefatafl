@@ -11,7 +11,6 @@ use rocket::{
     Request, Build, serde::json::Json,
 };
 use rocket_dyn_templates::Template;
-use std::thread::Builder;
 
 mod language;
 
@@ -71,13 +70,15 @@ fn lang(code: String, slc: &State<SharedLanguageCache>) -> Option<Json<Language>
 }
 
 #[get("/overview")]
-fn overview(games: &State<WebSocketServer>) -> String {
-    let games = games.inner().games.lock().unwrap();
+fn overview(games: &State<GamesMutex>) -> String {
+    let games = games.inner().lock().unwrap();
 
     let mut s = String::new();
 
     for (code, g) in games.iter() {
-        s.push_str(&format!("{}:\n{}\n", code, g.game));
+        if let Some(game) = &g.game {
+            s.push_str(&format!("{code:X}:\n{game}\n"));
+        }
     }
 
     s
@@ -152,6 +153,7 @@ fn rocket() -> rocket::Rocket<Build> {
                 ip,
                 ip_json,
                 robots,
+                hnefatafl::ws,
             ],
         )
         .attach(Template::fairing())
@@ -159,20 +161,14 @@ fn rocket() -> rocket::Rocket<Build> {
         .register("/", catchers![not_found])
 }
 
-mod websocket_server;
+mod hnefatafl;
 
-use websocket_server::WebSocketServer;
+use hnefatafl::GamesMutex;
 
 #[rocket::launch]
-fn rocket_() -> _ {
-    let wss = WebSocketServer::new();
-
-    let run_wss = wss.clone();
-
-    Builder::new().name("websocket_server".to_owned()).spawn(move || {
-        run_wss.run();
-    }).unwrap();
+fn rocket_launch() -> _ {
+    let games = GamesMutex::new();
 
     rocket()
-        .manage(wss)
+        .manage(games)
 }

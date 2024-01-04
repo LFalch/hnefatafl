@@ -1,24 +1,20 @@
+use rocket::State;
 
-use websocket::{OwnedMessage, CloseData, WebSocketError, WebSocketResult};
-use websocket::sync::Server;
-use websocket::receiver::Reader;
-use websocket::sender::Writer;
+use rocket::futures::{SinkExt,StreamExt};
+use rocket::tokio::select;
+use rocket::tokio::sync::mpsc::error::SendError;
+use rocket::tokio::sync::mpsc::{unbounded_channel, UnboundedSender};
+use rocket_ws::frame::{CloseFrame, CloseCode};
+use rocket_ws::{WebSocket, Channel, stream::DuplexStream, Message};
 
-use std::thread::{Builder, sleep};
-use std::sync::{Arc, Mutex};
-use std::collections::{HashMap, HashSet};
+use std::borrow::Cow;
+use std::collections::HashSet;
 use std::str::FromStr;
 use std::fmt::{self, Display};
-use std::net::TcpStream;
-use std::io::ErrorKind as IoErrorKind;
-use std::time::{Instant, Duration};
 
 use rand::{Rng, thread_rng};
 
-type WsReader = Reader<TcpStream>;
-type WsWriter = Writer<TcpStream>;
-
-struct Player(WsReader, WsWriter);
+type SendResult<T> = Result<T, SendError<Command>>;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 struct Pos(i8, i8);
@@ -39,101 +35,40 @@ impl Pos {
     }
 }
 
+type Player = UnboundedSender<Command>;
+
 pub struct Session {
     hirdi: Player,
     aatak: Option<Player>,
-    pub game: Game,
+    pub game: Option<Game>,
 }
 
 impl Session {
     #[inline]
-    fn new(aatak: (WsReader, WsWriter), game: Game) -> Self {
+    fn new(hirdi: Player, game: Game) -> Self {
         Session {
-            hirdi: Player(aatak.0, aatak.1),
+            hirdi,
             aatak: None,
-            game,
+            game: Some(game),
         }
     }
-    fn ping(&mut self) -> WebSocketResult<()> {
-        let ping_msg = OwnedMessage::Ping(vec![b'P', b'I', b'n', b'G']);
-
-        self.hirdi.1.send_message(&ping_msg)?;
-        if let Some(Player(_, a_sender)) = &mut self.aatak {
-            a_sender.send_message(&ping_msg)?;
-        }
-        Ok(())
+    fn send_command(&self, cmd: Command) {
+        let _ = self.hirdi.send(cmd.clone());
+        let _ = self.aatak.as_ref().unwrap().send(cmd);
     }
-    fn handle(&mut self) -> WebSocketResult<()> {
-        let Player(h_reader, h_sender) = &mut self.hirdi;
-        if let Some(Player(a_reader, a_sender)) = &mut self.aatak {
-            match handle(h_reader, h_sender)? {
-                Command::Move(x, y, dx, dy) => {
-                    for c in self.game.do_move(x, y, dx, dy, Team::Hirdi) {
-                        let msg = c.into_message();
-                        h_sender.send_message(&msg)?;
-                        a_sender.send_message(&msg)?;
-                    }
-                }
-                Command::Chat(msg) => {
-                    if !msg.is_empty() {
-                        let msg = Command::ChatMsg(Team::Hirdi, msg).into_message();
-                        h_sender.send_message(&msg)?;
-                        a_sender.send_message(&msg)?;
-                    }
-                }
-                _ => (),
-            }
-            match handle(a_reader, a_sender)? {
-                Command::Move(x, y, dx, dy) => {
-                    for c in self.game.do_move(x, y, dx, dy, Team::Aatak) {
-                        let msg = c.into_message();
-                        a_sender.send_message(&msg)?;
-                        h_sender.send_message(&msg)?;
-                    }
-                }
-                Command::Chat(msg) => {
-                    let msg = Command::ChatMsg(Team::Aatak, msg).into_message();
-                    a_sender.send_message(&msg)?;
-                    h_sender.send_message(&msg)?;
-                }
-                _ => (),
-            }
-
-            // Check is someone has won now
-            if let Some(winner) = self.game.who_has_won() {
-                match winner {
-                    Team::Aatak => {
-                        a_sender.send_message(&Command::Win.into_message())?;
-                        h_sender.send_message(&Command::Lose.into_message())?;
-                    }
-                    Team::Hirdi => {
-                        h_sender.send_message(&Command::Win.into_message())?;
-                        a_sender.send_message(&Command::Lose.into_message())?;
-                    }
-                }
-
-                let game_over_messsage = OwnedMessage::Close(Some(CloseData{
-                    status_code: 1000,
-                    reason: "Game over".to_owned(),
-                }));
-
-                h_sender.send_message(&game_over_messsage)?;
-                a_sender.send_message(&game_over_messsage)?;
-            }
-        } else {
-            let _msg = handle(h_reader, h_sender)?;
-        }
-
-        Ok(())
-    }
-    fn other_joined(&mut self, mut aatak: (WsReader, WsWriter)) -> WebSocketResult<()> {
+    fn other_joined(&mut self, aatak: Player) -> SendResult<()> {
         debug_assert!(self.aatak.is_none());
-        self.hirdi.1.send_message(&Command::Start.into_message())?;
-        aatak.1.send_message(&Command::Start.into_message())?;
-        self.aatak = Some(Player(aatak.0, aatak.1));
+        self.hirdi.send(Command::Start)?;
+        aatak.send(Command::Start)?;
+        self.aatak = Some(aatak);
 
         Ok(())
-    } 
+    }
+    /// Whether any player has left (which should end the session)
+    fn player_left(&self) -> bool {
+        self.hirdi.is_closed() ||
+        self.aatak.as_ref().map(|p| p.is_closed()).unwrap_or(false)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -430,8 +365,8 @@ enum Command {
 }
 
 impl Command {
-    fn into_message(self) -> OwnedMessage {
-        OwnedMessage::Text(self.to_string())
+    fn into_message(self) -> Message {
+        Message::Text(self.to_string())
     } 
 }
 
@@ -495,158 +430,188 @@ impl Display for Command {
     }
 }
 
-fn handle(reader: &mut WsReader, sender: &mut WsWriter) -> WebSocketResult<Command> {
-    let message = match reader.recv_message() {
-        Err(WebSocketError::IoError(i)) if i.kind() == IoErrorKind::WouldBlock => return Ok(Command::Nop),
-        m => m?,
+#[get("/ws")]
+pub fn ws(ws: WebSocket, games: &State<GamesMutex>) -> Channel<'static> {
+    let games = games.inner().clone();
+
+    ws.channel(move |mut stream: DuplexStream| Box::pin(async move {
+        let code: u16;
+        let team;
+
+        let (tx, mut rx) = unbounded_channel();
+        let cmd = handle(&mut stream).await?;
+
+        let close;
+        match cmd {
+            Command::Join(the_code) => {
+                code = the_code;
+                team = Team::Aatak;
+                let message;
+                if let Some(session) = games.lock().unwrap().get_mut(&code) {
+                    if session.aatak.is_none() {
+                        message = Command::JoinOk(code, None).into_message();
+                        session.other_joined(tx.clone()).unwrap();
+                        close = false;
+                    } else {
+                        message = Message::Close(Some(CloseFrame {
+                            code: CloseCode::Again,
+                            reason: Cow::Borrowed("Game in progress")
+                        }));
+                        close = true;
+                    }
+                } else {
+                    message = Message::Close(Some(CloseFrame {
+                        code: CloseCode::Policy,
+                        reason: Cow::Borrowed("No such game")
+                    }));
+                    close = true;
+                }
+                stream.send(message).await?;
+            }
+            Command::Host(s) => {
+                close = false;
+                let stor = s.as_ref().map(|s| &**s) == Some("stor");
+                team = Team::Hirdi;
+
+                code = loop {
+                    let code = gen_game_code();
+                    
+                    if !games.lock().unwrap().contains_key(&code) {
+                        break code;
+                    }
+                };
+                stream.send(Command::HostOk(code).into_message()).await?;
+                games.lock().unwrap().insert(code.clone(), Session::new(tx.clone(), Game::new(stor)));
+            }
+            c => panic!("didn't except: {:?}", c),
+        }
+
+        if close {
+            return Ok(())
+        }
+
+        loop {
+            select! {
+                cmd = rx.recv() => {
+                    if let Some(cmd) = cmd {
+                        stream.send(cmd.into_message()).await?;
+                    } else {
+                        break;
+                    }
+                }
+                cmd = handle(&mut stream) => {
+                    let cmd = cmd?;
+
+                    let mut game = games.lock().unwrap();
+                    let Some(session) = game.get_mut(&code) else {break;};
+
+                    if session.player_left() {
+                        game.remove(&code);
+                        break;
+                    }
+
+                    match cmd {
+                        Command::Chat(msg) => {
+                            if !msg.is_empty() {
+                                session.send_command(Command::ChatMsg(team, msg));
+                            }
+                        }
+                        Command::Move(x, y, dx, dy) => {
+                            if let Some(game) = &mut session.game {
+                                for c in game.do_move(x, y, dx, dy, team) {
+                                    session.send_command(c);
+                                }
+                            }
+                        }
+                        _ => (),
+                    }
+
+                    if let Some(game) = &mut session.game {
+                        if let Some(winner) = game.who_has_won() {
+                            match winner {
+                                Team::Aatak => {
+                                    let _ = session.hirdi.send(Command::Win);
+                                    let _ = session.aatak.as_ref().unwrap().send(Command::Lose);
+                                }
+                                Team::Hirdi => {
+                                    let _ = session.hirdi.send(Command::Lose);
+                                    let _ = session.aatak.as_ref().unwrap().send(Command::Win);
+                                }
+                            }
+                            
+                            // Game over
+                            session.game = None;
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }))
+}
+
+
+async fn handle(stream: &mut DuplexStream) -> rocket_ws::result::Result<Command> {
+    let Some(message) = stream.next().await else {
+        // TODO: probably close the stream
+        return Ok(Command::Nop)
     };
+    let message = message?;
 
     match message {
-        OwnedMessage::Close(_) => {
-            let message = OwnedMessage::Close(None);
-            sender.send_message(&message)?;
-            return Err(WebSocketError::NoDataAvailable);
+        Message::Close(_) => {
+            stream.send(Message::Close(None)).await?;
+
+            return Err(rocket_ws::result::Error::ConnectionClosed)
         }
-        OwnedMessage::Pong(_) => (),
-        OwnedMessage::Ping(ping) => {
-            let message = OwnedMessage::Pong(ping);
-            sender.send_message(&message)?;
+        Message::Pong(_) => (),
+        Message::Ping(vec) => stream.send(Message::Pong(vec)).await?,
+        Message::Text(msg) => {
+            return Ok(msg.parse().map_err(|()| rocket_ws::result::Error::Utf8)?);
         }
-        OwnedMessage::Text(text) => {
-            return text.parse().map_err(|()| WebSocketError::ProtocolError("indiscernable message"));
-        }
-        _ => eprintln!("Got unexpected {:?}", message),
+        message => eprintln!("Got unexpected {:?}", message),
     }
     Ok(Command::Nop)
 }
 
-#[derive(Clone)]
-pub struct WebSocketServer {
-    pub games: Arc<Mutex<HashMap<u16, Session>>>,
-}
+pub use games::*;
 
-impl WebSocketServer {
-    pub fn new() -> Self {
-        WebSocketServer {
-            games: Arc::new(Mutex::new(HashMap::<u16, Session>::new())),
-        }
+mod games {
+    use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
+    use std::collections::HashMap;
+
+    use super::Session;
+
+    #[derive(Clone)]
+    pub struct GamesMutex {
+        games: Arc<Mutex<HashMap<u16, Session>>>,
     }
-    pub fn run(self) {
-        let server = Server::bind("127.0.0.1:2794").unwrap();
-        const PROTOCOL: &str = "hnefatafl";
-
-        let WebSocketServer{games} = self;
-
-        {
-            let games = games.clone();
-            let mut last_ping_time = Instant::now();
-
-            Builder::new().name("running games handler".to_owned()).spawn(move || {
-                loop {
-                    {
-                        let mut games_lock = games.lock().unwrap();
-
-                        let mut deads = Vec::new();
-
-                        const PING_DELAY: Duration = Duration::from_secs(5);
-
-                        let now = Instant::now();
-
-                        let ping = now - last_ping_time >= PING_DELAY;
-                        if ping {
-                            last_ping_time = now;
-                        }
-
-                        for (code, session) in games_lock.iter_mut() {
-                            if ping {
-                                let _ = session.ping();
-                            }
-
-                            match session.handle() {
-                                Ok(()) => (),
-                                Err(WebSocketError::ProtocolError(s)) => eprintln!("Protocol error: {}", s),
-                                Err(WebSocketError::NoDataAvailable) => {
-                                    deads.push(code.clone());
-                                }
-                                Err(WebSocketError::IoError(i)) if i.kind() == IoErrorKind::BrokenPipe => {
-                                    deads.push(code.clone());
-                                }
-                                Err(e) => eprintln!("Unexpected error: {:?}", e),
-                            }
-                        }
-
-                        deads.dedup();
-                        for dead in deads {
-                            games_lock.remove(&dead);
-                        }
-                    }
-                    sleep(std::time::Duration::from_nanos(50));
-                }
-            }).unwrap();
+    
+    impl GamesMutex {
+        pub fn new() -> Self {
+            GamesMutex {
+                games: Arc::new(Mutex::new(HashMap::<u16, Session>::new())),
+            }
         }
-
-        for request in server.filter_map(Result::ok) {
-            let games = games.clone();
-
-            let ip = request.stream.peer_addr().unwrap();
-            // Spawn a new thread for each connection.
-            Builder::new().name(format!("connection_{}", ip)).spawn(move || {
-                // Is this is not a Hnefatafl connection, reject it
-                if !request.protocols().contains(&PROTOCOL.to_owned()) {
-                    request.reject().unwrap();
-                    return;
-                }
-                // Accept using protocol
-                let mut client = request.use_protocol(PROTOCOL).accept().unwrap();
-
-                let code;
-
-                let msg = client.recv_message().unwrap();
-
-                match msg {
-                    OwnedMessage::Text(s) => {
-                        match s.parse() {
-                            Ok(Command::Join(the_code)) => {
-                                code = the_code;
-                                if let Some(session) = games.lock().unwrap().get_mut(&code) {
-                                    if session.aatak.is_none() {
-                                        client.send_message(&Command::JoinOk(code, None).into_message()).unwrap();
-                                        client.set_nonblocking(true).unwrap();
-                                        session.other_joined(client.split().unwrap()).unwrap();
-                                    } else {
-                                        client.send_message(&OwnedMessage::Close(Some(CloseData{
-                                            status_code: 1008,
-                                            reason: "Game in progress".to_owned(),
-                                        }))).unwrap();
-                                    }
-                                } else {
-                                    client.send_message(&OwnedMessage::Close(Some(CloseData{
-                                        status_code: 1008,
-                                        reason: "No such game".to_owned(),
-                                    }))).unwrap();
-                                }
-                            }
-                            Ok(Command::Host(s)) => {
-                                let stor = s.as_ref().map(|s| &**s) == Some("stor");
-                            
-                                code = loop {
-                                    let code = gen_game_code();
-                                    
-                                    if !games.lock().unwrap().contains_key(&code) {
-                                        break code;
-                                    }
-                                };
-                                client.send_message(&Command::HostOk(code.clone()).into_message()).unwrap();
-                                client.set_nonblocking(true).unwrap();
-                                games.lock().unwrap().insert(code.clone(), Session::new(client.split().unwrap(), Game::new(stor)));
-                            }
-                            Ok(c) => panic!("didn't except: {:?}", c),
-                            Err(_) => panic!("Couldn't parse {:?}", s),
+        pub fn lock(&self) -> Result<MutexGuard<'_, HashMap<u16, Session>>, PoisonError<MutexGuard<'_, HashMap<u16, Session>>>> {
+            match self.games.lock() {
+                Ok(mut guard) => {
+                    let mut deads = Vec::new();
+                    for (&code, session) in guard.iter() {
+                        if session.player_left() {
+                            deads.push(code);
                         }
                     }
-                    s => panic!("didn't expect {:?}", s)
-                }
-            }).unwrap();
+    
+                    for dead in deads {
+                        guard.remove(&dead);
+                    }
+    
+                    Ok(guard)
+                },
+                Err(e) => Err(e)
+            }
         }
     }
 }

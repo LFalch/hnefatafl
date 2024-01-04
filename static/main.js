@@ -220,12 +220,10 @@ function setup() {
     onReloadStrings();
     board = new Board(false);
     let protocol = "ws:";
-    let path = ":2794"
     if (window.location.protocol === "https:") {
         protocol = "wss:";
-        path = "/ws";
     }
-    socket = new WebSocket(`${protocol}//${document.location.hostname}${path}`, "hnefatafl");
+    socket = new WebSocket(`${protocol}//${document.location.hostname}:${document.location.port}/ws`);
     socket.onmessage = onMessage;
     socket.onclose = onClose;
 
