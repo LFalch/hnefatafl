@@ -290,6 +290,8 @@ onReloadStringsCbs.push(function() {
     senderName['åtak'] = senderName['aatak'] = senderName['true'] = senderName['1'];
 });
 
+let moveLog = [];
+
 function onMessage(event) {
     console.log(event.data);
     if (event.data.startsWith('HOST_OK ')) {
@@ -320,6 +322,17 @@ function onMessage(event) {
         const x = Number(args[0]);
         const y = Number(args[1]);
 
+        /** @type {string} */
+        const lastMove = moveLog[moveLog.length - 1];
+        if (lastMove.match('x') == null) {
+            const end = lastMove.slice(lastMove.length-2);
+            const start = lastMove.slice(0, lastMove.length-2);
+            const modifiedMove = `${start}x${end}`;
+            moveLog[moveLog.length - 1] = modifiedMove;
+            const ps = document.getElementById('logMessages');
+            const c = ps.children[ps.children.length - 1].firstChild;
+            c.textContent = c.textContent.slice(0, c.textContent.length - lastMove.length) + modifiedMove;
+        }
         console.log(`deleted ${board.delete(x, y)}`);
     } else if (event.data.startsWith('MOVE ')) {
         const args = event.data.substr(5).split(' ');
@@ -328,6 +341,30 @@ function onMessage(event) {
         const y = Number(args[1]);
         const dx = Number(args[2]);
         const dy = Number(args[3]);
+
+        {
+            const ctos = (x, y) => `${String.fromCharCode(0x61+x)}${y+1}`;
+            let move = `${ctos(x, y)}${ctos(x + dx, y + dy) }`;
+
+            const ps = document.getElementById('logMessages');
+            let p = ps.children[ps.children.length-1];
+            if (board.aatakTur) {
+                p = document.createElement('p');
+                const span = document.createElement('span');
+                span.textContent = `${Math.floor(moveLog.length / 2) + 1}. `;
+
+                p.appendChild(span);
+                ps.appendChild(p);
+            } else {
+                p.firstChild.textContent += '  ';
+
+                if (board.konge.x == x && board.konge.y == y)
+                    move = `K${move}`;
+            }
+
+            moveLog.push(move);
+            p.firstChild.textContent += move;
+        }
 
         board.find(x, y).move(dx, dy);
         board.aatakTur = !board.aatakTur;

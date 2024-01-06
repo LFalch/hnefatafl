@@ -43,7 +43,7 @@
         "join_fail": "De server gaaf een onjuist antwoord. Ik verwachtte de code $CODE, maar kreeg ",
         "join_success": "Nam deel aan ronde.",
         "your_turn": "Het is jouw beurt.",
-        "opponents_turn": "Het is jouw tegenstander zijn beurt.",
+        "opponents_turn": "Je tegenstander is aan de beurt.",
         "game_start": "Het spel is begonnen",
         "game_start2": {
             "true": " en je bent aan het starten.",
