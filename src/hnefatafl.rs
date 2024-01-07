@@ -1,3 +1,4 @@
+use bitflags::bitflags;
 use rocket::State;
 
 use rocket::futures::{SinkExt,StreamExt};
@@ -73,8 +74,18 @@ impl Session {
     }
 }
 
+bitflags! {
+    #[repr(transparent)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+    pub struct GameFlags: u8 {
+        const DEFAULT = 0b0;
+        const KING_CANNOT_TAKE = 0b0000_0001;
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Game {
+    flags: GameFlags,
     size: i8,
     turn: Team,
     konge: Pos,
@@ -113,6 +124,7 @@ impl Game {
 
         Game {
             size,
+            flags: GameFlags::DEFAULT,
             turn: Team::Aatak,
             konge,
             hirdmenn,
@@ -200,6 +212,7 @@ impl Game {
                     (0, -128 ..= -1) => (dest_y..y).map(|y| (dest_x, y)).all(|(x, y)| self.can_pass(x, y)),
                     (1 ..= 127, 0) => (x+1..=dest_x).map(|x| (x, dest_y)).all(|(x, y)| self.can_pass(x, y)),
                     (-128 ..= -1, 0) => (dest_x..x).map(|x| (x, dest_y)).all(|(x, y)| self.can_pass(x, y)),
+                    // invalid move, return empty vector
                     (0, 0) | (_, _) => return cmds,
                 };
 
@@ -208,20 +221,26 @@ impl Game {
                     let dest = Pos(dest_x, dest_y);
                     *self.get_mut_pos(piece) = dest;
 
-                    for (x, y) in dest.surround() {
-                        if let Some(threatened_piece) = self.find(x, y) {
-                            if threatened_piece.team() != team {
-                                let (x2, y2) = (2 * x - dest.0, 2 * y - dest.1);
-                                let other_side = self.find(x2, y2).map(|p| p.team());
-                                
-                                if Some(team) == other_side || (team == Team::Hirdi && (self.is_castle(x2, y2))) {
-                                    let dead = match threatened_piece {
-                                        PieceOnBoard::Aatakar(i) => self.aatakarar.remove(i),
-                                        PieceOnBoard::Hirdmann(i) => self.hirdmenn.remove(i),
-                                        PieceOnBoard::Konge => continue,
-                                    };
-                                    debug_assert_eq!(dead, Pos(x, y));
-                                    cmds.push(Command::Delete(x, y));
+                    if self.flags.contains(GameFlags::KING_CANNOT_TAKE) && matches!(piece, PieceOnBoard::Konge) {
+                        // king cannot take if flag is set
+                    } else {
+                        // check every adjacent to see if it is captured
+                        for (x, y) in dest.surround() {
+                            if let Some(threatened_piece) = self.find(x, y) {
+                                // if the adjacent piece of the other team and a team is on the other side, it will be deleted
+                                if threatened_piece.team() != team {
+                                    let (x2, y2) = (2 * x - dest.0, 2 * y - dest.1);
+                                    let other_side = self.find(x2, y2).map(|p| p.team());
+                                    
+                                    if Some(team) == other_side || (team == Team::Hirdi && (self.is_castle(x2, y2))) {
+                                        let dead = match threatened_piece {
+                                            PieceOnBoard::Aatakar(i) => self.aatakarar.remove(i),
+                                            PieceOnBoard::Hirdmann(i) => self.hirdmenn.remove(i),
+                                            PieceOnBoard::Konge => continue,
+                                        };
+                                        debug_assert_eq!(dead, Pos(x, y));
+                                        cmds.push(Command::Delete(x, y));
+                                    }
                                 }
                             }
                         }
