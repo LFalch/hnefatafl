@@ -321,18 +321,14 @@ function onMessage(event) {
 
         const x = Number(args[0]);
         const y = Number(args[1]);
+        const dir = args[2] == 'true' ? `${y + 1}` : String.fromCharCode(0x61 + x);
 
-        /** @type {string} */
-        const lastMove = moveLog[moveLog.length - 1];
-        if (lastMove.match('x') == null) {
-            const end = lastMove.slice(lastMove.length-2);
-            const start = lastMove.slice(0, lastMove.length-2);
-            const modifiedMove = `${start}x${end}`;
-            moveLog[moveLog.length - 1] = modifiedMove;
-            const ps = document.getElementById('logMessages');
-            const c = ps.children[ps.children.length - 1].firstChild;
-            c.textContent = c.textContent.slice(0, c.textContent.length - lastMove.length) + modifiedMove;
-        }
+        const ps = document.getElementById('logMessages');
+        const c = ps.children[ps.children.length - 1].firstChild;
+
+        if (c.textContent.match('x') == null)
+            c.textContent += 'x';
+        c.textContent += dir;
         console.log(`deleted ${board.delete(x, y)}`);
     } else if (event.data.startsWith('MOVE ')) {
         const args = event.data.substr(5).split(' ');
@@ -403,10 +399,22 @@ function onMessage(event) {
 
         msgBox(sender_name, msg);
     } else if (event.data.startsWith('WIN')) {
-        msgBox(null, `${strings.end[aatak]}. ${strings.game_win}`);
+        endGame(true);
     } else if (event.data.startsWith('LOSE')) {
-        msgBox(null, `${strings.end[!aatak]}. ${strings.game_lose}`);
+        endGame(false);
     }
+}
+function endGame(win) {
+    // change the turn to be the opponent's so you can't move anymore
+    board.aatakTur = !aatak;
+    msgBox(null, `${strings.end[win ? aatak : !aatak]}. ${win ? strings.game_win : strings.game_lose}`);
+    const ps = document.getElementById('logMessages');
+    const p = document.createElement('p');
+    const span = document.createElement('span');
+    span.textContent = '##';
+
+    p.appendChild(span);
+    ps.appendChild(p);
 }
 function isValid(x, y) {
     const mid = Math.floor(board.dims / 2);

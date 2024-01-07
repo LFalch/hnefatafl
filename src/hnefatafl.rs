@@ -11,6 +11,7 @@ use rocket_ws::{WebSocket, Channel, stream::DuplexStream, Message};
 
 use std::borrow::Cow;
 use std::collections::HashSet;
+use std::iter;
 use std::str::FromStr;
 use std::fmt::{self, Display};
 use std::time::Duration;
@@ -28,13 +29,21 @@ impl Pos {
         self.0 == x && self.1 == y
     }
     fn surround(&self) -> impl Iterator<Item=(i8, i8)> {
-        Some((self.0+1, self.1)).into_iter().chain(
-            Some((self.0-1, self.1)).into_iter().chain(
-                Some((self.0, self.1+1)).into_iter().chain(
-                    Some((self.0, self.1-1))
-                )
-            )
-        )
+        [(self.0+1, self.1), (self.0-1, self.1), (self.0, self.1+1), (self.0, self.1-1)]
+            .into_iter()
+    }
+    fn surround_with_directions(&self) -> impl Iterator<Item=((i8, i8), Captures)> {
+       self.surround().zip([Captures::RIGHT, Captures::LEFT, Captures::DOWN, Captures::UP])
+    }
+}
+
+const fn i8_to_letter(x: i8) -> char {
+    (b'a' + x as u8) as char
+}
+
+impl Display for Pos {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}{}", i8_to_letter(self.0), self.1+1)
     }
 }
 
@@ -43,7 +52,7 @@ type Player = UnboundedSender<Command>;
 pub struct Session {
     hirdi: Player,
     aatak: Option<Player>,
-    pub game: Option<Game>,
+    pub game: Game,
 }
 
 impl Session {
@@ -52,10 +61,11 @@ impl Session {
         Session {
             hirdi,
             aatak: None,
-            game: Some(game),
+            game,
         }
     }
     fn send_command(&self, cmd: Command) {
+        eprintln!("{cmd}");
         let _ = self.hirdi.send(cmd.clone());
         let _ = self.aatak.as_ref().unwrap().send(cmd);
     }
@@ -77,6 +87,69 @@ impl Session {
 bitflags! {
     #[repr(transparent)]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+    pub struct Captures: u8 {
+        const NONE  = 0b0000;
+        const UP    = 0b0001;
+        const RIGHT = 0b0010;
+        const DOWN  = 0b0100;
+        const LEFT  = 0b1000;
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Move {
+    from: Pos,
+    to: Pos,
+    king: bool,
+    captures: Captures
+}
+
+impl Move {
+    fn into_commands(self) -> impl IntoIterator<Item=Command> {
+        let Pos(fx, fy) = self.from;
+        let Pos(tx, ty) = self.to;
+
+        iter::once(Command::Move(fx, fy, tx-fx, ty-fy))
+            .chain(
+                self.captures
+                    .into_iter()
+                    .filter_map(move |dir| match dir {
+                        Captures::UP => Some(Command::Delete(tx, ty-1, true)),
+                        Captures::RIGHT => Some(Command::Delete(tx+1, ty, false)),
+                        Captures::DOWN => Some(Command::Delete(tx, ty+1, true)),
+                        Captures::LEFT => Some(Command::Delete(tx-1, ty, false)),
+                        _ => None,
+                    })
+            )
+}
+    }
+
+impl Display for Move {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.king {
+            write!(f, "K")?;
+        }
+        write!(f, "{}", self.from)?;
+        write!(f, "{}", self.to)?;
+        if !self.captures.is_empty() {
+            write!(f, "x")?;
+            for dir in self.captures {
+                match dir {
+                    Captures::UP => write!(f, "{}", self.to.1-1+1)?,
+                    Captures::RIGHT => write!(f, "{}", i8_to_letter(self.to.0+1))?,
+                    Captures::LEFT => write!(f, "{}", i8_to_letter(self.to.0-1))?,
+                    Captures::DOWN => write!(f, "{}", self.to.1+1+1)?,
+                    _ => (),
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+bitflags! {
+    #[repr(transparent)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
     pub struct GameFlags: u8 {
         const DEFAULT = 0b0;
         const KING_CANNOT_TAKE = 0b0000_0001;
@@ -86,7 +159,11 @@ bitflags! {
 #[derive(Debug, Clone)]
 pub struct Game {
     flags: GameFlags,
+    log: Vec<Move>,
+    /// `true` when one side has won
+    game_over: bool,
     size: i8,
+    /// if `game_over` is `true`, this indicates who has won
     turn: Team,
     konge: Pos,
     hirdmenn: Vec<Pos>,
@@ -123,9 +200,11 @@ impl Game {
         }
 
         Game {
+            log: Vec::new(),
             size,
             flags: GameFlags::DEFAULT,
             turn: Team::Aatak,
+            game_over: false,
             konge,
             hirdmenn,
             aatakarar
@@ -195,15 +274,17 @@ impl Game {
     fn out_of_bounds(&self, x: i8, y: i8) -> bool {
         x < 0 || x >= self.size || y < 0 || y >= self.size
     }
-    fn do_move(&mut self, x: i8, y: i8, dx: i8, dy: i8, team: Team) -> Vec<Command> {
-        let mut cmds = Vec::with_capacity(4);
+    /// Returns move if it is legal
+    fn do_move(&mut self, x: i8, y: i8, dx: i8, dy: i8, team: Team) -> Option<Move> {
+        if self.game_over {
+            // if the game is over, no more moves can be done
+            return None;
+        }
 
         let dest_x = x + dx;
         let dest_y = y + dy;
 
-        if self.out_of_bounds(dest_x, dest_y) {
-            return cmds;
-        }
+        let mut mv = None;
 
         if let Some(piece) = self.find(x, y) {
             if piece.team() == team && team == self.turn && self.can_go(piece, dest_x, dest_y) {
@@ -213,19 +294,27 @@ impl Game {
                     (1 ..= 127, 0) => (x+1..=dest_x).map(|x| (x, dest_y)).all(|(x, y)| self.can_pass(x, y)),
                     (-128 ..= -1, 0) => (dest_x..x).map(|x| (x, dest_y)).all(|(x, y)| self.can_pass(x, y)),
                     // invalid move, return empty vector
-                    (0, 0) | (_, _) => return cmds,
+                    (0, 0) | (_, _) => return None,
                 };
 
                 if can_pass {
-                    cmds.push(Command::Move(x, y, dx, dy));
+                    // move piece to destination
                     let dest = Pos(dest_x, dest_y);
+                    let king = matches!(piece, PieceOnBoard::Konge);
+                    mv = Some(Move {
+                        from: Pos(x, y),
+                        to: dest,
+                        captures: Captures::NONE,
+                        king,
+                    });
                     *self.get_mut_pos(piece) = dest;
 
-                    if self.flags.contains(GameFlags::KING_CANNOT_TAKE) && matches!(piece, PieceOnBoard::Konge) {
+                    if king && self.flags.contains(GameFlags::KING_CANNOT_TAKE) {
                         // king cannot take if flag is set
                     } else {
                         // check every adjacent to see if it is captured
-                        for (x, y) in dest.surround() {
+                        for ((x, y), dir) in dest.surround_with_directions() {
+                            // no need to validate positions, because invalid positions also will not have pieces
                             if let Some(threatened_piece) = self.find(x, y) {
                                 // if the adjacent piece of the other team and a team is on the other side, it will be deleted
                                 if threatened_piece.team() != team {
@@ -239,19 +328,42 @@ impl Game {
                                             PieceOnBoard::Konge => continue,
                                         };
                                         debug_assert_eq!(dead, Pos(x, y));
-                                        cmds.push(Command::Delete(x, y));
+                                        mv.as_mut().unwrap().captures |= dir;
                                     }
                                 }
                             }
                         }
                     }
 
-                    self.turn.switch();
+                    // check win condition
+                    let Pos(kx, ky) = self.konge;
+                    match team {
+                        Team::Hirdi if self.is_escape_castle(kx, ky) || self.aatakarar.is_empty() => {
+                            self.game_over = true;
+                        }
+                        Team::Aatak if self.king_captured(kx, ky) || self.hird_surrounded() => {
+                            self.game_over = true;
+                        }
+                        _ => self.turn.switch(),
+                    }
                 }
             }
+        } else {
+            // if no piece is found, this move is illegal
+            return None;
         }
 
-        cmds
+        if let Some(mv) = mv {
+            self.log.push(mv);
+        }
+        mv
+    }
+    fn king_captured(&self, kx: i8, ky: i8) -> bool {
+        Pos(kx, ky).surround().all(|(x, y)| {
+            self.out_of_bounds(x, y) ||
+            self.is_middle_castle(x, y) ||
+            self.find(x, y).map(|p| p.team()) == Some(Team::Aatak)
+        })
     }
     fn hird_surrounded(&self) -> bool {
         // Do a BFS from each corner to any hird piece
@@ -278,22 +390,7 @@ impl Game {
         }
     }
     fn who_has_won(&self) -> Option<Team> {
-        let Pos(kx, ky) = self.konge;
-
-        if self.is_escape_castle(kx, ky) {
-            Some(Team::Hirdi)
-        } else {
-            let king_captured = Pos(kx, ky).surround().all(|(x, y)| {
-                self.out_of_bounds(x, y) ||
-                self.is_middle_castle(x, y) ||
-                self.find(x, y).map(|p| p.team()) == Some(Team::Aatak)
-            });
-            if king_captured || self.hird_surrounded() {
-                Some(Team::Aatak)
-            } else {
-                None
-            }
-        }
+        self.game_over.then_some(self.turn)
     }
 }
 
@@ -339,6 +436,23 @@ impl PieceOnBoard {
 
 impl Display for Game {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "FLAGS: ")?;
+        for flag in self.flags {
+            write!(f, "{flag:?}")?;
+        }
+        writeln!(f)?;
+        for (moves, n) in self.log.chunks(2).zip(1u32..) {
+            let mut mvs = moves.into_iter();
+            write!(f, "{n}. {}", mvs.next().unwrap())?;
+            if let Some(mv) = mvs.next() {
+                write!(f, "  {mv}")?;
+            }
+            writeln!(f)?;
+        }
+        if self.game_over {
+            writeln!(f, "##")?;
+        }
+
         let size = self.size;
         let size_u = size as usize;
 
@@ -377,7 +491,7 @@ enum Command {
     JoinOk(u16, Option<String>),
     Start,
     Move(i8, i8, i8, i8),
-    Delete(i8, i8),
+    Delete(i8, i8, bool),
     ChatMsg(Team, String),
     Chat(String),
     Win,
@@ -410,6 +524,7 @@ impl FromStr for Command {
             "DELETE" => Ok(Command::Delete(
                 split.next().ok_or(())?.parse().map_err(|_| ())?,
                 split.next().ok_or(())?.parse().map_err(|_| ())?,
+                split.next().ok_or(())?.parse().map_err(|_| ())?,
             )),
             "CHAT_MSG" => Ok(Command::ChatMsg(
                 match split.next().ok_or(())? {
@@ -440,7 +555,7 @@ impl Display for Command {
             Command::JoinOk(c, None) => write!(f, "JOIN_OK {:X}", c),
             Command::Start => write!(f, "START"),
             Command::Move(a, b, c, d) => write!(f, "MOVE {} {} {} {}", a, b, c, d),
-            Command::Delete(a, b) => write!(f, "DELETE {} {}", a, b),
+            Command::Delete(a, b, c) => write!(f, "DELETE {a} {b} {c}"),
             Command::ChatMsg(Team::Hirdi, m) => write!(f, "CHAT_MSG 0 {}", m),
             Command::ChatMsg(Team::Aatak, m) => write!(f, "CHAT_MSG 1 {}", m),
             Command::Chat(m) => write!(f, "CHAT {}", m),
@@ -545,31 +660,26 @@ pub fn ws(ws: WebSocket, games: &State<GamesMutex>) -> Channel<'static> {
                             }
                         }
                         Command::Move(x, y, dx, dy) => {
-                            if let Some(game) = &mut session.game {
-                                for c in game.do_move(x, y, dx, dy, team) {
+                            if let Some(mv) = session.game.do_move(x, y, dx, dy, team) {
+                                for c in mv.into_commands() {
                                     session.send_command(c);
+                                }
+
+                                if let Some(winner) = session.game.who_has_won() {
+                                    match winner {
+                                        Team::Aatak => {
+                                            let _ = session.aatak.as_ref().unwrap().send(Command::Win);
+                                            let _ = session.hirdi.send(Command::Lose);
+                                        }
+                                        Team::Hirdi => {
+                                            let _ = session.hirdi.send(Command::Win);
+                                            let _ = session.aatak.as_ref().unwrap().send(Command::Lose);
+                                        }
+                                    }
                                 }
                             }
                         }
                         _ => (),
-                    }
-
-                    if let Some(game) = &mut session.game {
-                        if let Some(winner) = game.who_has_won() {
-                            match winner {
-                                Team::Aatak => {
-                                    let _ = session.aatak.as_ref().unwrap().send(Command::Win);
-                                    let _ = session.hirdi.send(Command::Lose);
-                                }
-                                Team::Hirdi => {
-                                    let _ = session.hirdi.send(Command::Win);
-                                    let _ = session.aatak.as_ref().unwrap().send(Command::Lose);
-                                }
-                            }
-
-                            // Game over
-                            session.game = None;
-                        }
                     }
                 }
             }

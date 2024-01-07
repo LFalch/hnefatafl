@@ -73,15 +73,14 @@ fn lang(code: &str, slc: &State<SharedLanguageCache>) -> Option<Json<Language>> 
 fn overview(games: &State<GamesMutex>) -> String {
     let games = games.inner().lock().unwrap();
 
-    let mut s = String::new();
+    let mut buf = String::new();
 
-    for (code, g) in games.iter() {
-        if let Some(game) = &g.game {
-            s.push_str(&format!("{code:X}:\n{game}\n"));
-        }
+    for (code, s) in games.iter() {
+        let game = &s.game;
+        buf.push_str(&format!("{code:X}:\n{game}\n"));
     }
 
-    s
+    buf
 }
 
 #[get("/favicon.ico")]
