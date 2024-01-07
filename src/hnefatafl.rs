@@ -4,6 +4,7 @@ use rocket::futures::{SinkExt,StreamExt};
 use rocket::tokio::select;
 use rocket::tokio::sync::mpsc::error::SendError;
 use rocket::tokio::sync::mpsc::{unbounded_channel, UnboundedSender};
+use rocket::tokio::time::sleep;
 use rocket_ws::frame::{CloseFrame, CloseCode};
 use rocket_ws::{WebSocket, Channel, stream::DuplexStream, Message};
 
@@ -11,6 +12,7 @@ use std::borrow::Cow;
 use std::collections::HashSet;
 use std::str::FromStr;
 use std::fmt::{self, Display};
+use std::time::Duration;
 
 use rand::{Rng, thread_rng};
 
@@ -492,6 +494,9 @@ pub fn ws(ws: WebSocket, games: &State<GamesMutex>) -> Channel<'static> {
 
         loop {
             select! {
+                _ = sleep(Duration::from_secs(5)) => {
+                    stream.send(Message::Ping(vec![75, 31, 21, 123, 51, 32])).await?;
+                }
                 cmd = rx.recv() => {
                     if let Some(cmd) = cmd {
                         stream.send(cmd.into_message()).await?;
